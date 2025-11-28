@@ -1,0 +1,33 @@
+{
+    "name": "golf",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "imports": {
+        "#": "./src/",
+        "#experience/": "./src/experience/",
+        "#world/": "./src/experience/world/",
+        "#assets/": "./src/assets/",
+        "#resources/": "./src/experience/resources/",
+        "#sources/": "./src/sources/",
+        "#utils/": "./src/experience/utils/",
+        "#shaders/": "./src/shaders/"
+    },
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "vite": "^6.2.2",
+        "vite-plugin-restart": "^0.4.2"
+    },
+    "dependencies": {
+        "@dimforge/rapier3d": "^0.19.1",
+        "gsap": "^3.13.0",
+        "three": "^0.174.0",
+        "three-custom-shader-material": "^6.3.7",
+        "three-perf": "^1.0.11",
+        "tweakpane": "^4.0.5",
+        "vite-plugin-wasm": "^3.5.0"
+    }
+}
