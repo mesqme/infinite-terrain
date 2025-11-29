@@ -6,11 +6,26 @@ export default class Floor {
         this.experience = new Experience()
         this.scene = this.experience.scene
         this.resources = this.experience.resources
+        this.physics = this.experience.physics
 
         this.setGeometry()
         this.setTextures()
         this.setMaterial()
         this.setMesh()
+        this.setPhysics()
+    }
+
+    setPhysics() {
+        import('@dimforge/rapier3d').then((RAPIER) => {
+            const rigidBodyDesc = RAPIER.RigidBodyDesc.fixed()
+            this.rigidBody = this.physics.world.createRigidBody(rigidBodyDesc)
+
+            const colliderDesc = RAPIER.ColliderDesc.cuboid(5, 0.001, 5) // Half-extents
+            this.collider = this.physics.world.createCollider(
+                colliderDesc,
+                this.rigidBody
+            )
+        })
     }
 
     setGeometry() {

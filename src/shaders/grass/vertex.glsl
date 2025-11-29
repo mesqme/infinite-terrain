@@ -145,7 +145,7 @@ void main() {
   height += randomHeight;
 
   // Discard short grass
-  if (height < 0.5 * GRASS_HEIGHT) {
+  if (height < 0.3) {
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0); // Outside clip space
       return;
   }
@@ -172,7 +172,7 @@ void main() {
   float randomLeanAnimation = noise(
       vec3(grassBladeWorldPos.xz, time * 1.5)) * (windCombined * 0.5 + 0.125);
   
-  float leanFactor = remap(hashVal.y, -1.0, 1.0, -0.3, 0.3) + randomLeanAnimation;
+  float leanFactor = remap(hashVal.y, -1.0, 1.0, -0.2, 0.2) + randomLeanAnimation;
 
   // Bezier Curve
   vec3 p1 = vec3(0.0);
@@ -196,25 +196,28 @@ void main() {
   mat3 grassMat = rotateAxis(windAxis, windLeanAngle) * rotateY(angle);
 
   vec3 grassLocalPosition = grassMat * vec3(x, y, z) + grassOffset;
-  vec3 grassLocalNormal = grassMat * vec3(0.0, curveRot90 * curveGrad.yz);
+  vec3 exactLocalNormal = grassMat * vec3(0.0, curveRot90 * curveGrad.yz);
 
-  // Blend Normal
-  float distanceBlend = smoothstep(
-      0.0, 10.0, distance(cameraPosition, grassBladeWorldPos));
-  grassLocalNormal = mix(grassLocalNormal, vec3(0.0, 1.0, 0.0), distanceBlend * 0.5);
-  grassLocalNormal = normalize(grassLocalNormal);
+  // Calculate world data early for view-dependent effects
+  vec4 worldPosition = modelMatrix * vec4(grassLocalPosition, 1.0);
+  vec3 viewDir = normalize(cameraPosition - worldPosition.xyz);
+  vec3 exactWorldNormal = normalize((modelMatrix * vec4(exactLocalNormal, 0.0)).xyz);
 
   // Viewspace Thicken
   vec4 mvPosition = modelViewMatrix * vec4(grassLocalPosition, 1.0);
 
-  vec3 viewDir = normalize(cameraPosition - grassBladeWorldPos);
-  vec3 grassFaceNormal = (grassMat * vec3(0.0, 0.0, -zSide));
+  float viewDotNormal = saturateValue(abs(dot(exactWorldNormal, viewDir)));
+  float viewSpaceThickenFactor = pow(1.0 - viewDotNormal, 3.0);
 
-  float viewDotNormal = saturateValue(dot(grassFaceNormal, viewDir));
-  float viewSpaceThickenFactor = easeOut(
-      1.0 - viewDotNormal, 4.0) * smoothstep(0.0, 0.2, viewDotNormal);
+  // Widen the blade in view space without splitting faces
+  mvPosition.x += viewSpaceThickenFactor * (xSide - 0.5) * width * 0.5;
 
-  mvPosition.x += viewSpaceThickenFactor * (xSide - 0.5) * width * 0.5 * -zSide;
+  // Blend Normal for lighting
+  vec3 grassLocalNormal = exactLocalNormal;
+  float distanceBlend = smoothstep(
+      0.0, 10.0, distance(cameraPosition, worldPosition.xyz));
+  grassLocalNormal = mix(grassLocalNormal, vec3(0.0, 1.0, 0.0), distanceBlend * 0.5);
+  grassLocalNormal = normalize(grassLocalNormal);
 
   gl_Position = projectionMatrix * mvPosition;
   gl_Position.w = tileGrassHeight < 0.25 ? 0.0 : gl_Position.w;
@@ -226,7 +229,7 @@ void main() {
   vColor += vec3(colorVar * 0.5, colorVar, colorVar * 0.5);
 
   vNormal = normalize((modelMatrix * vec4(grassLocalNormal, 0.0)).xyz);
-  vWorldPosition = (modelMatrix * vec4(grassLocalPosition, 1.0)).xyz;
+  vWorldPosition = worldPosition.xyz;
 
   vGrassData = vec4(x, heightPercent, xSide, grassType);
 }

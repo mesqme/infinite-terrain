@@ -3,43 +3,33 @@ import Experience from '../Experience.js'
 import vertexShader from '../../shaders/grass/vertex.glsl?raw'
 import fragmentShader from '../../shaders/grass/fragment.glsl?raw'
 
-// Constants
-const GRASS_SEGMENTS = 6
-
 export default class Grass {
-    constructor(
-        position = new THREE.Vector3(0, 0, 0),
-        size = 4,
-        count = 5000,
-        width = 0.1,
-        height = 0.8
-    ) {
+    constructor(position = [0, 0, 0]) {
         this.experience = new Experience()
         this.scene = this.experience.scene
         this.resources = this.experience.resources
         this.time = this.experience.time
         this.debug = this.experience.debug
 
-        // Check if position is an array or a Vector3
-        if (Array.isArray(position)) {
-            this.position = new THREE.Vector3(...position)
-        } else {
-            this.position = position
-        }
+        this.position = new THREE.Vector3(...position)
 
-        this.size = size
-        this.count = count
-        this.width = width
-        this.height = height
+        this.params = {
+            width: 0.15,
+            height: 0.8,
+            segments: 5,
+            size: 4,
+            count: 5000,
+        }
 
         this.setGeometry()
         this.setMaterial()
         this.setMesh()
+        this.setParams()
     }
 
     setGeometry() {
-        const segments = GRASS_SEGMENTS
-        const VERTICES = (segments + 1) * 2
+        const segments = this.params.segments
+        const vertices = (segments + 1) * 2
         const indices = []
 
         for (let i = 0; i < segments; ++i) {
@@ -52,7 +42,7 @@ export default class Grass {
             indices[i * 12 + 4] = vi + 1
             indices[i * 12 + 5] = vi + 3
 
-            const fi = VERTICES + vi
+            const fi = vertices + vi
             indices[i * 12 + 6] = fi + 2
             indices[i * 12 + 7] = fi + 1
             indices[i * 12 + 8] = fi + 0
@@ -63,11 +53,11 @@ export default class Grass {
         }
 
         this.geometry = new THREE.InstancedBufferGeometry()
-        this.geometry.instanceCount = this.count
+        this.geometry.instanceCount = this.params.count
         this.geometry.setIndex(indices)
         this.geometry.boundingSphere = new THREE.Sphere(
             new THREE.Vector3(0, 0, 0),
-            1 + this.size * 2
+            1 + this.params.size * 2
         )
     }
 
@@ -76,10 +66,10 @@ export default class Grass {
             uniforms: {
                 grassParams: {
                     value: new THREE.Vector4(
-                        GRASS_SEGMENTS,
-                        this.size,
-                        this.width,
-                        this.height
+                        this.params.segments,
+                        this.params.size,
+                        this.params.width,
+                        this.params.height
                     ),
                 },
                 time: { value: 0 },
@@ -102,6 +92,34 @@ export default class Grass {
         this.mesh = new THREE.Mesh(this.geometry, this.material)
         this.mesh.position.copy(this.position)
         this.scene.add(this.mesh)
+    }
+
+    // Debug
+    setParams() {
+        if (this.debug.active) {
+            this.debugFolder = this.debug.pane.addFolder({ title: 'grass' })
+
+            this.debugFolder
+                .addBinding(this.params, 'width', {
+                    min: 0.01,
+                    max: 0.5,
+                    step: 0.001,
+                })
+                .on('change', () => this.updateParams())
+
+            this.debugFolder
+                .addBinding(this.params, 'height', {
+                    min: 0.1,
+                    max: 3,
+                    step: 0.01,
+                })
+                .on('change', () => this.updateParams())
+        }
+    }
+
+    updateParams() {
+        this.material.uniforms.grassParams.value.z = this.params.width
+        this.material.uniforms.grassParams.value.w = this.params.height
     }
 
     update() {
