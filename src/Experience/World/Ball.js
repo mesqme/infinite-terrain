@@ -4,9 +4,9 @@ import RAPIER from '@dimforge/rapier3d'
 
 const BASE_RADIUS = 0.4
 const BASE_FORCES = {
-    jump: 8.5,
-    impulse: 10.0,
-    torque: 1.0,
+    jump: 10.0,
+    impulse: 15.0,
+    torque: 2.0,
 }
 
 // const CAMERA_POSITION = new THREE.Vector3(0, 7, 10)
@@ -32,7 +32,7 @@ export default class Ball {
             friction: 1,
             linearDamping: 1.5,
             angularDamping: 2.5,
-            forceScaling: 0.1, // Non-linear scaling factor
+            forceScaling: 0.5, // Non-linear scaling factor
         }
 
         this.smoothedCameraPosition = new THREE.Vector3(0, 7, 10)
@@ -62,8 +62,9 @@ export default class Ball {
         this.material = new THREE.MeshStandardMaterial({
             color: '#ffffff',
             roughness: 0.4,
-            metalness: 0.3,
-            flatShading: true,
+            // metalness: 0.3,
+            metalness: 1.0,
+            // flatShading: true,
         })
     }
 
@@ -314,7 +315,7 @@ export default class Ball {
             this.cameraControls.target.copy(this.smoothedCameraTarget)
         }
 
-        if (position.y < -4) {
+        if (position.y < -10) {
             this.reset()
         }
     }

@@ -8,6 +8,8 @@ export default class Environment {
         this.resources = this.experience.resources
         this.debug = this.experience.debug
 
+        this.sunOffset = new THREE.Vector3(3.5, 2, -1.25)
+
         // Debug
         if (this.debug.active) {
             this.debugFolder = this.debug.pane.addFolder({
@@ -25,8 +27,9 @@ export default class Environment {
         this.sunLight.shadow.camera.far = 15
         this.sunLight.shadow.mapSize.set(1024, 1024)
         this.sunLight.shadow.normalBias = 0.05
-        this.sunLight.position.set(3.5, 2, -1.25)
+        this.sunLight.position.copy(this.sunOffset)
         this.scene.add(this.sunLight)
+        this.scene.add(this.sunLight.target)
 
         // Debug
         if (this.debug.active) {
@@ -37,21 +40,21 @@ export default class Environment {
                 step: 0.001,
             })
 
-            this.debugFolder.addBinding(this.sunLight.position, 'x', {
+            this.debugFolder.addBinding(this.sunOffset, 'x', {
                 label: 'sunPos X',
                 min: -5,
                 max: 5,
                 step: 0.001,
             })
 
-            this.debugFolder.addBinding(this.sunLight.position, 'y', {
+            this.debugFolder.addBinding(this.sunOffset, 'y', {
                 label: 'sunPos Y',
                 min: -5,
                 max: 5,
                 step: 0.001,
             })
 
-            this.debugFolder.addBinding(this.sunLight.position, 'z', {
+            this.debugFolder.addBinding(this.sunOffset, 'z', {
                 label: 'sunPos Z',
                 min: -5,
                 max: 5,
@@ -93,6 +96,14 @@ export default class Environment {
                     step: 0.001,
                 })
                 .on('change', () => this.environmentMap.updateMaterials())
+        }
+    }
+
+    update() {
+        if (this.experience.world.ball) {
+            const ballPosition = this.experience.world.ball.mesh.position
+            this.sunLight.position.copy(ballPosition).add(this.sunOffset)
+            this.sunLight.target.position.copy(ballPosition)
         }
     }
 }

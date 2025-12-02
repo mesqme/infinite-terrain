@@ -10,19 +10,14 @@ export default class Terrain {
         this.ball = this.experience.world.ball
 
         this.chunks = new Map()
-        this.chunkSize = 8
+        this.chunkSize = 16
         this.currentChunkX = 0
         this.currentChunkZ = 0
 
-        this.setGeometry()
         this.setTextures()
         this.setMaterial()
 
         this.updateChunks()
-    }
-
-    setGeometry() {
-        this.geometry = new THREE.PlaneGeometry(this.chunkSize, this.chunkSize)
     }
 
     setTextures() {
@@ -38,12 +33,73 @@ export default class Terrain {
         this.textures.normal.repeat.set(1.2, 1.2)
         this.textures.normal.wrapS = THREE.RepeatWrapping
         this.textures.normal.wrapT = THREE.RepeatWrapping
+
+        // Height data
+        const noiseTexture = this.resources.items.noiseTexture
+        if (noiseTexture) {
+            const canvas = document.createElement('canvas')
+            canvas.width = noiseTexture.image.width
+            canvas.height = noiseTexture.image.height
+            const context = canvas.getContext('2d')
+            context.drawImage(noiseTexture.image, 0, 0)
+            this.heightData = context.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            )
+        }
+    }
+
+    getHeight(x, z) {
+        if (!this.heightData) return 0
+
+        const width = this.heightData.width
+        const height = this.heightData.height
+
+        // Map world coordinates to texture coordinates
+        // We'll use a scale factor to control frequency
+        const scale = 2.0 // Pixels per world unit
+        let u = (x * scale) % width
+        let v = (z * scale) % height
+
+        // Handle negative coordinates for wrapping
+        if (u < 0) u += width
+        if (v < 0) v += height
+
+        // Bilinear interpolation for smoother terrain
+        const x1 = Math.floor(u)
+        const x2 = (x1 + 1) % width
+        const z1 = Math.floor(v)
+        const z2 = (z1 + 1) % height
+
+        const fx = u - x1
+        const fz = v - z1
+
+        // Helper to get pixel value (red channel)
+        const getVal = (px, pz) => {
+            const index = (pz * width + px) * 4
+            return this.heightData.data[index] / 255
+        }
+
+        const h1 = getVal(x1, z1)
+        const h2 = getVal(x2, z1)
+        const h3 = getVal(x1, z2)
+        const h4 = getVal(x2, z2)
+
+        const lerpX1 = h1 + (h2 - h1) * fx
+        const lerpX2 = h3 + (h4 - h3) * fx
+
+        const h = lerpX1 + (lerpX2 - lerpX1) * fz
+
+        return h * 8 - 4 // Scale height amplitude
     }
 
     setMaterial() {
         this.material = new THREE.MeshStandardMaterial({
             map: this.textures.color,
             normalMap: this.textures.normal,
+            // wireframe: true,
         })
     }
 
@@ -86,8 +142,8 @@ export default class Terrain {
                         chunkX,
                         chunkZ,
                         this.chunkSize,
-                        this.geometry,
-                        this.material
+                        this.material,
+                        this // Pass terrain instance
                     )
                     chunk.load()
                     this.chunks.set(key, chunk)
