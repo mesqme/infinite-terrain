@@ -4,12 +4,14 @@ import RAPIER from '@dimforge/rapier3d'
 
 const BASE_RADIUS = 0.4
 const BASE_FORCES = {
-    jump: 6.5,
-    impulse: 3.3,
-    torque: 0.6,
+    jump: 8.5,
+    impulse: 10.0,
+    torque: 1.0,
 }
 
-const CAMERA_POSITION = new THREE.Vector3(0, 7, 10)
+// const CAMERA_POSITION = new THREE.Vector3(0, 7, 10)
+const CAMERA_POSITION = new THREE.Vector3(0, 16, 24)
+// const CAMERA_POSITION = new THREE.Vector3(0, 4, 4)
 const RAYCASTER_ORIGIN_Y_OFFSET = 0.1 - 0.02
 
 export default class Ball {
@@ -24,7 +26,7 @@ export default class Ball {
 
         this.params = {
             position: { x: 0, y: 2, z: 0 },
-            radius: 0.3,
+            radius: 0.5,
             mass: 1,
             restitution: 0.2,
             friction: 1,
@@ -168,10 +170,8 @@ export default class Ball {
             undefined,
             undefined,
             undefined,
-            this.rigidBody // Exclude self
+            this.rigidBody // Exclude ball itself
         )
-
-        // Check if close to ground (distance from center to ground should be approx radius)
         if (hit && hit.timeOfImpact < this.params.radius + 0.15) {
             const forces = this.getForces()
             this.rigidBody.applyImpulse({ x: 0, y: forces.jump, z: 0 }, true)

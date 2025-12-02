@@ -8,7 +8,8 @@ import Renderer from './Renderer.js'
 import World from './World/World.js'
 import Resources from './Utils/Resources.js'
 import Physics from './Utils/Physics.js'
-import PhysicsDebug from './Utils/PhysicsDebug.js'
+// import PhysicsDebug from './Utils/PhysicsDebug.js'
+import Performance from './Utils/Performance.js'
 
 import sources from './sources.js'
 
@@ -35,9 +36,10 @@ export default class Experience {
         this.scene = new THREE.Scene()
         this.resources = new Resources(sources)
         this.physics = new Physics()
-        this.physicsDebug = new PhysicsDebug()
+        // this.physicsDebug = new PhysicsDebug()
         this.camera = new Camera()
         this.renderer = new Renderer()
+        this.performance = new Performance()
         this.world = new World()
 
         // Resize event
@@ -57,11 +59,13 @@ export default class Experience {
     }
 
     update() {
+        this.performance.begin()
         this.physics.update()
-        this.physicsDebug.update()
+        // this.physicsDebug.update()
         this.camera.update()
         this.world.update()
         this.renderer.update()
+        this.performance.end()
     }
 
     destroy() {
@@ -88,7 +92,7 @@ export default class Experience {
 
         this.camera.controls.dispose()
         this.renderer.instance.dispose()
-
-        if (this.debug.active) this.debug.ui.destroy()
+        this.performance.destroy()
+        this.debug.ui.destroy()
     }
 }

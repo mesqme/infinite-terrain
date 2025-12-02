@@ -22,6 +22,11 @@ export default [
         path: '../assets/textures/normal.jpg',
     },
     {
+        name: 'noiseTexture',
+        type: 'texture',
+        path: '../assets/textures/noiseTexture.png',
+    },
+    {
         name: 'foxModel',
         type: 'gltfModel',
         path: '../assets/models/Fox.glb',

@@ -1,8 +1,9 @@
 import Experience from '../Experience.js'
 import Environment from './Environment.js'
-import Floor from './Floor.js'
+// import Floor from './Floor.js'
 // import Fox from './Fox.js'
-import Grass from './Grass.js'
+// import Grass from './Grass.js'
+import Terrain from './Terrain.js'
 import Ball from './Ball.js'
 
 export default class World {
@@ -14,17 +15,18 @@ export default class World {
         // Wait for resources
         this.resources.on('ready', () => {
             // Setup
-            this.floor = new Floor()
+            // this.floor = new Floor()
             // this.fox = new Fox()
-            this.grass = new Grass()
+            // this.grass = new Grass()
             this.ball = new Ball()
+            this.terrain = new Terrain()
             this.environment = new Environment()
         })
     }
 
     update() {
         if (this.fox) this.fox.update()
-        if (this.grass) this.grass.update()
         if (this.ball) this.ball.update()
+        if (this.terrain) this.terrain.update()
     }
 }

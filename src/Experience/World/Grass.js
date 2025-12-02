@@ -14,11 +14,11 @@ export default class Grass {
         this.position = new THREE.Vector3(...position)
 
         this.params = {
-            width: 0.15,
-            height: 0.8,
+            width: 0.27,
+            height: 1.4,
             segments: 5,
             size: 4,
-            count: 5000,
+            count: 1000,
         }
 
         this.setGeometry()
@@ -96,25 +96,23 @@ export default class Grass {
 
     // Debug
     setParams() {
-        if (this.debug.active) {
-            this.debugFolder = this.debug.pane.addFolder({ title: 'grass' })
-
-            this.debugFolder
-                .addBinding(this.params, 'width', {
-                    min: 0.01,
-                    max: 0.5,
-                    step: 0.001,
-                })
-                .on('change', () => this.updateParams())
-
-            this.debugFolder
-                .addBinding(this.params, 'height', {
-                    min: 0.1,
-                    max: 3,
-                    step: 0.01,
-                })
-                .on('change', () => this.updateParams())
-        }
+        // if (this.debug.active) {
+        //     this.debugFolder = this.debug.pane.addFolder({ title: 'grass' })
+        //     this.debugFolder
+        //         .addBinding(this.params, 'width', {
+        //             min: 0.01,
+        //             max: 0.5,
+        //             step: 0.001,
+        //         })
+        //         .on('change', () => this.updateParams())
+        //     this.debugFolder
+        //         .addBinding(this.params, 'height', {
+        //             min: 0.1,
+        //             max: 3,
+        //             step: 0.01,
+        //         })
+        //         .on('change', () => this.updateParams())
+        // }
     }
 
     updateParams() {
@@ -124,5 +122,11 @@ export default class Grass {
 
     update() {
         this.material.uniforms.time.value = this.time.elapsed * 0.001
+    }
+
+    destroy() {
+        this.geometry.dispose()
+        this.material.dispose()
+        this.scene.remove(this.mesh)
     }
 }
