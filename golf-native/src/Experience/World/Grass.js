@@ -4,12 +4,13 @@ import vertexShader from '../../shaders/grass/vertex.glsl?raw'
 import fragmentShader from '../../shaders/grass/fragment.glsl?raw'
 
 export default class Grass {
-    constructor(position = [0, 0, 0]) {
+    constructor(position = [0, 0, 0], chunkSize = 16, terrain = null) {
         this.experience = new Experience()
         this.scene = this.experience.scene
         this.resources = this.experience.resources
         this.time = this.experience.time
         this.debug = this.experience.debug
+        this.terrain = terrain
 
         this.position = new THREE.Vector3(...position)
 
@@ -17,8 +18,9 @@ export default class Grass {
             width: 0.27,
             height: 1.4,
             segments: 5,
-            size: 4,
-            count: 1000,
+            // size is half the chunk size (patch size), matching golf-react
+            size: chunkSize / 2,
+            count: 5000,
         }
 
         this.setGeometry()
@@ -58,6 +60,32 @@ export default class Grass {
         this.geometry.boundingSphere = new THREE.Sphere(
             new THREE.Vector3(0, 0, 0),
             1 + this.params.size * 2
+        )
+
+        // Generate positions and height using terrain noise (same as terrain vertices)
+        const positions = new Float32Array(this.params.count * 3)
+        const chunkSize = this.params.size * 2 // Full chunk size
+
+        for (let i = 0; i < this.params.count; i++) {
+            // Random position within chunk bounds
+            const x = (Math.random() - 0.5) * chunkSize
+            const z = (Math.random() - 0.5) * chunkSize
+
+            // Calculate world coordinates
+            const worldX = x + this.position.x
+            const worldZ = z + this.position.z
+
+            // Use terrain's getHeight method to get Y offset (same as terrain vertices)
+            const y = this.terrain ? this.terrain.getHeight(worldX, worldZ) : 0
+
+            positions[i * 3] = x
+            positions[i * 3 + 1] = y
+            positions[i * 3 + 2] = z
+        }
+
+        this.geometry.setAttribute(
+            'aInstancePosition',
+            new THREE.InstancedBufferAttribute(positions, 3)
         )
     }
 

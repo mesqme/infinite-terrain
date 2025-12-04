@@ -83,7 +83,7 @@ export default class TerrainChunk {
     load() {
         this.setMesh()
         this.setPhysics()
-        // this.setGrass()
+        this.setGrass()
     }
 
     setPhysics() {
@@ -112,11 +112,11 @@ export default class TerrainChunk {
     }
 
     setGrass() {
-        this.grass = new Grass([
-            this.position.x,
-            this.position.y,
-            this.position.z,
-        ])
+        this.grass = new Grass(
+            [this.position.x, this.position.y, this.position.z],
+            this.size,
+            this.terrain
+        )
     }
 
     update() {

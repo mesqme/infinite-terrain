@@ -1,6 +1,8 @@
 uniform vec4 grassParams;
 uniform float time;
 
+attribute vec3 aInstancePosition;
+
 varying vec3 vColor;
 varying vec4 vGrassData;
 varying vec3 vNormal;
@@ -111,9 +113,8 @@ void main() {
   float GRASS_WIDTH = grassParams.z;
   float GRASS_HEIGHT = grassParams.w;
 
-  // Instance offset
-  vec2 hashedInstanceID = hash21(float(gl_InstanceID)) * 2.0 - 1.0;
-  vec3 grassOffset = vec3(hashedInstanceID.x, 0.0, hashedInstanceID.y) * GRASS_PATCH_SIZE;
+  // Instance offset (includes noise-based Y height from terrain)
+  vec3 grassOffset = aInstancePosition;
   
   vec3 grassBladeWorldPos = (modelMatrix * vec4(grassOffset, 1.0)).xyz;
   vec3 hashVal = hash(grassBladeWorldPos);

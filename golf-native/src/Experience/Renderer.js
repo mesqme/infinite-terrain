@@ -32,6 +32,15 @@ export default class Renderer {
     }
 
     update() {
+        const perf = this.experience.perf
+        // console.log(perf.active)
+
+        if (perf?.active) {
+            perf.panel.begin()
+        }
         this.instance.render(this.scene, this.camera.instance)
+        if (perf?.active) {
+            perf.panel.end()
+        }
     }
 }

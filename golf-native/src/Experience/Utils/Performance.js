@@ -8,8 +8,10 @@ export default class Performance {
         this.scene = this.experience.scene
         this.renderer = this.experience.renderer.instance
 
+        this.active = true
+
         if (this.experience.debug.active) {
-            this.perf = new ThreePerf({
+            this.panel = new ThreePerf({
                 anchorX: 'left',
                 anchorY: 'top',
                 domElement: document.body,
@@ -18,15 +20,15 @@ export default class Performance {
         }
     }
 
-    begin() {
-        if (this.perf) this.perf.begin()
-    }
+    // begin() {
+    //     this.perf.begin()
+    // }
 
-    end() {
-        if (this.perf) this.perf.end()
-    }
+    // end() {
+    //     this.perf.end()
+    // }
 
-    destroy() {
-        if (this.perf) this.perf.dispose()
-    }
+    // destroy() {
+    //     this.perf.dispose()
+    // }
 }

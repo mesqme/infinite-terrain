@@ -39,8 +39,8 @@ export default class Experience {
         // this.physicsDebug = new PhysicsDebug()
         this.camera = new Camera()
         this.renderer = new Renderer()
-        this.performance = new Performance()
         this.world = new World()
+        this.perf = new Performance()
 
         // Resize event
         this.sizes.on('resize', () => {
@@ -59,13 +59,11 @@ export default class Experience {
     }
 
     update() {
-        this.performance.begin()
         this.physics.update()
         // this.physicsDebug.update()
         this.camera.update()
         this.world.update()
         this.renderer.update()
-        this.performance.end()
     }
 
     destroy() {
