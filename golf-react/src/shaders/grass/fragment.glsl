@@ -5,6 +5,7 @@ varying vec3 vColor;
 varying vec4 vGrassData;
 varying vec3 vNormal;
 varying vec3 vWorldPosition;
+varying float vTrailValue;
 
 float inverseLerp(float v, float minValue, float maxValue) {
   return (v - minValue) / (maxValue - minValue);
@@ -86,6 +87,12 @@ void main() {
   // vec3 color = baseColor.xyz;
   // vec3 color = vColor;
   // color *= ao;
+
+  // Darken grass where the ball has moved
+  if (vTrailValue > 0.2) {
+    float darkenFactor = mix(1.0, 0.5, vTrailValue);
+    color *= darkenFactor;
+  }
 
   // gl_FragColor = vec4(pow(color, vec3(1.0 / 2.2)), 1.0);
   gl_FragColor = vec4(color, 1.0);

@@ -12,30 +12,66 @@ uniform float uWindSpeed;
 uniform float uPositionX;
 uniform float uPositionZ;
 
+uniform sampler2D uTrailTexture;
+uniform vec3 uBallPosition;
+
 attribute vec3 aInstancePosition;
 
 varying vec3 vColor;
 varying vec4 vGrassData;
 varying vec3 vNormal;
 varying vec3 vWorldPosition;
+varying float vTrailValue;
 
 #include includes.glsl
 
 void main() {
   int GRASS_SEGMENTS = int(uGrassParameters.x);
   int GRASS_VERTICES = (GRASS_SEGMENTS + 1) * 2;
-  float GRASS_PATCH_SIZE = uGrassParameters.y;
+  float GRASS_PATCH_SIZE = uGrassParameters.y; // size * 0.5
   float GRASS_WIDTH = uGrassParameters.z;
   float GRASS_HEIGHT = uGrassParameters.w;
 
-  // Use the passed instance position directly (it contains local X, height Y, local Z)
   vec3 grassOffset = aInstancePosition;
-  
-  // Generate hash for lean value for the grass blade
-  vec3 grassBladeWorldPos = (modelMatrix * vec4(grassOffset, 1.0)).xyz; // get the world position of the grass blade
-  vec3 hashVal = hash(grassBladeWorldPos); // generate hash value from the world position
+  vec3 grassBladeWorldPos = (modelMatrix * vec4(grassOffset, 1.0)).xyz;
+  vec3 hashVal = hash(grassBladeWorldPos);
 
   float grassHeight = 1.0;
+
+  // --- trail-based flattening ---
+  vec2 worldXZ = grassBladeWorldPos.xz;
+  vec2 ballXZ = uBallPosition.xz;
+
+  // BallTrailCanvas uses CHUNK_SIZE as patch size;
+  // here GRASS_PATCH_SIZE is size / 2, so patchSize = size.
+  float patchSize = GRASS_PATCH_SIZE * 2.0;
+  float trailRadius = GRASS_PATCH_SIZE;
+
+  vec2 deltaXZ = worldXZ - ballXZ;
+  float distToBall = length(deltaXZ);
+
+  float trailValue = 0.0;
+  if (distToBall < trailRadius) {
+    // Match BallTrailCanvas mapping:
+    // uv.x = 0.5 - (worldX - ballX) / patchSize
+    // uv.y = 0.5 - (worldZ - ballZ) / patchSize
+    vec2 trailUv = 0.5 - deltaXZ / patchSize;
+
+
+    // flip X to fix left/right mirroring
+    trailUv.x = 1.0 - trailUv.x;
+
+    // keep inside texture bounds
+    trailUv = clamp(trailUv, 0.0, 1.0);
+
+    trailValue = texture2D(uTrailTexture, trailUv).r;
+
+    if (trailValue > 0.2) {
+      float flattenFactor = 1.0 - trailValue;
+      grassHeight *= flattenFactor;
+    }
+  }
+  // --- end trail-based flattening ---
 
   // Figure out vertex id, > GRASS_VERTICES is other side
   int vertFB_ID = gl_VertexID % (GRASS_VERTICES * 2);
@@ -48,7 +84,7 @@ void main() {
   float zSide = float(zTest);
   float heightPercent = float(vertID - xTest) / (float(GRASS_SEGMENTS) * 2.0);
 
-  // Rnadom height
+  // Random height
   float randomHeight = (rand(float(gl_InstanceID)) * 2.0 - 1.0) * 0.1;
   float width = uSquareShape
     ? GRASS_WIDTH
@@ -91,7 +127,7 @@ void main() {
   mat3 grassMat = rotateAxis(windAxis, windLeanAngle) * rotateY(angle);
 
   // Calculate the final position
-  vec3 grassLocalPosition = grassMat * vec3(x, y, z) + grassOffset; // change initial XYZ coords with offset and rotation matrix
+  vec3 grassLocalPosition = grassMat * vec3(x, y, z) + grassOffset;
 
   // Calculate normal
   vec3 curveGrad = bezierGrad(p1, p2, p3, p4, heightPercent);
@@ -102,6 +138,7 @@ void main() {
     ) *
     -zSide;
   vec3 grassLocalNormal = grassMat * vec3(0.0, curveRot90 * curveGrad.yz);
+
   // Blend normal
   float distanceBlend = smoothstep(
     0.0,
@@ -125,11 +162,11 @@ void main() {
   float viewSpaceThickenFactor =
     easeOut(1.0 - viewDotNormal, 4.0) * smoothstep(0.0, 0.2, viewDotNormal);
 
-  mvPosition.x += viewSpaceThickenFactor * (xSide - 0.5) * width * 0.5 * -zSide;
+  mvPosition.x +=
+    viewSpaceThickenFactor * (xSide - 0.5) * width * 0.5 * -zSide;
 
   gl_Position = projectionMatrix * mvPosition;
   gl_Position.w = grassHeight < 0.25 ? 0.0 : gl_Position.w;
-  // gl_Position = projectionMatrix * modelViewMatrix * vec4(grassLocalPosition, 1.0);
 
   // Pass the color to the fragment shader
   vColor = mix(uGrassBaseColor, uGrassTopColor, heightPercent);
@@ -137,4 +174,5 @@ void main() {
   vNormal = normalize((modelMatrix * vec4(grassLocalNormal, 0.0)).xyz);
   vWorldPosition = (modelMatrix * vec4(grassLocalPosition, 1.0)).xyz;
   vGrassData = vec4(x, heightPercent, xSide, 0.0);
+  vTrailValue = trailValue;
 }
