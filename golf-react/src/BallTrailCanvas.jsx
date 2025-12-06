@@ -4,35 +4,39 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useStore from './stores/useStore.jsx'
 
-const CHUNK_SIZE = 10
+const TRAIL_CANVAS_SIZE = 256
 const GLOW_SIZE = 0.1
-const FADE_ALPHA = 0.02
+const FADE_ALPHA = 0.01
 const MOVE_EPSILON = 0.001
 
 export default function BallTrailCanvas() {
     const ballPosition = useStore((state) => state.ballPosition)
     const setTrailTexture = useStore((state) => state.setTrailTexture)
+    const trailPatchSize = useStore((state) => state.trailPatchSize)
 
     const canvasRef = useRef(null)
     const textureRef = useRef(null)
     const glowImageRef = useRef(null)
     const previousPositionRef = useRef(null)
+    const ctxRef = useRef(null)
+    const currentPosRef = useRef(new THREE.Vector3())
+    const movementDeltaRef = useRef(new THREE.Vector3())
 
     useEffect(() => {
         const canvas = document.createElement('canvas')
-        canvas.width = 256
-        canvas.height = 256
+        canvas.width = TRAIL_CANVAS_SIZE
+        canvas.height = TRAIL_CANVAS_SIZE
         canvas.style.position = 'fixed'
-        canvas.style.width = '256px'
-        canvas.style.height = '256px'
+        canvas.style.width = `${TRAIL_CANVAS_SIZE}px`
+        canvas.style.height = `${TRAIL_CANVAS_SIZE}px`
         canvas.style.left = '0'
         canvas.style.bottom = '0'
         canvas.style.zIndex = '10'
         document.body.appendChild(canvas)
 
-        const ctx = canvas.getContext('2d')
-        ctx.fillStyle = 'black'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctxRef.current = canvas.getContext('2d')
+        ctxRef.current.fillStyle = 'black'
+        ctxRef.current.fillRect(0, 0, canvas.width, canvas.height)
 
         const texture = new THREE.CanvasTexture(canvas)
         texture.minFilter = THREE.LinearFilter
@@ -56,15 +60,15 @@ export default function BallTrailCanvas() {
         }
     }, [setTrailTexture])
 
-    useFrame(() => {
+    useFrame(({ clock }) => {
+        const delta = clock.getDelta()
         const canvas = canvasRef.current
+        const ctx = ctxRef.current
         const glowImage = glowImageRef.current
         const texture = textureRef.current
         if (!canvas || !glowImage || !glowImage.complete || !texture) return
 
-        const ctx = canvas.getContext('2d')
-
-        const currentPosition = new THREE.Vector3().copy(ballPosition)
+        const currentPosition = currentPosRef.current.copy(ballPosition)
         currentPosition.y = 0
 
         let previousPosition = previousPositionRef.current
@@ -73,12 +77,12 @@ export default function BallTrailCanvas() {
             previousPositionRef.current = previousPosition
         }
 
-        const movementDelta = new THREE.Vector3().subVectors(
+        const movementDelta = movementDeltaRef.current.subVectors(
             currentPosition,
             previousPosition
         )
 
-        const patchSize = CHUNK_SIZE
+        const patchSize = trailPatchSize
         const scale = canvas.width / patchSize
 
         const canvasDeltaX = -movementDelta.x * scale
@@ -96,6 +100,8 @@ export default function BallTrailCanvas() {
         }
 
         ctx.globalCompositeOperation = 'source-over'
+        // const effectiveFade = 1.0 - Math.pow(1.0 - FADE_ALPHA, delta * 2000.0)
+        // ctx.globalAlpha = effectiveFade
         ctx.globalAlpha = FADE_ALPHA
         ctx.fillStyle = 'black'
         ctx.fillRect(0, 0, canvas.width, canvas.height)

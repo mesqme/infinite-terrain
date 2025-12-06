@@ -61,39 +61,32 @@ void main() {
     smoothstep(0.125, 0.0, abs(grassX))
   );
 
-  // // Hemi
+  // Hemi
   vec3 c1 = vec3(1.0, 1.0, 0.75);
   vec3 c2 = vec3(0.05, 0.05, 0.25);
 
   vec3 ambientLighting = hemiLight(normal, c2, c1);
 
-  // // Directional light
+  // Directional light
   vec3 lightDir = normalize(vec3(1.0, 0.5, 1.0));
   vec3 lightColour = vec3(1.0);
   vec3 diffuseLighting = lambertLight(normal, viewDir, lightDir, lightColour);
 
-  // // Specular
+  // Specular
   vec3 specular = phongSpecular(normal, lightDir, viewDir);
 
   // Fake AO
   float ao = remap(pow(grassY, 2.0), 0.0, 1.0, 0.125, 1.0);
 
   vec3 lighting = diffuseLighting * 0.2 + ambientLighting * 0.8;
-  // vec3 lighting = ambientLighting * 1.0;
 
-  // vec3 color = vColor.xyz * lighting;
   vec3 color = vColor.xyz * lighting;
-  // vec3 color = vColor.xyz;
-  // vec3 color = baseColor.xyz;
-  // vec3 color = vColor;
-  // color *= ao;
 
-  // Darken grass where the ball has moved
-  if (vTrailValue > 0.2) {
-    float darkenFactor = mix(1.0, 0.5, vTrailValue);
-    color *= darkenFactor;
-  }
+  // Smoothly darken grass where the ball has moved
+  // trailMask goes from 0 (no effect) to 1 (full darkening) as vTrailValue increases.
+  float trailMask = smoothstep(0.0, 0.9, vTrailValue);
+  float darkenFactor = mix(1.0, 0.5, trailMask);
+  color *= darkenFactor;
 
-  // gl_FragColor = vec4(pow(color, vec3(1.0 / 2.2)), 1.0);
   gl_FragColor = vec4(color, 1.0);
 }
