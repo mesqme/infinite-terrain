@@ -38,40 +38,77 @@ void main() {
 
   float grassHeight = 1.0;
 
-  // --- trail-based flattening ---
+  // ---------------------------------------------------------------------------
+  // Trail texture sampling + gradient-based bending data
+  // ---------------------------------------------------------------------------
   vec2 worldXZ = grassBladeWorldPos.xz;
-  vec2 ballXZ = uBallPosition.xz;
+  vec2 ballXZ  = uBallPosition.xz;
 
   // BallTrailCanvas uses CHUNK_SIZE as patch size;
   // here GRASS_PATCH_SIZE is size / 2, so patchSize = size.
   float patchSize = GRASS_PATCH_SIZE * 2.0;
-  float trailRadius = GRASS_PATCH_SIZE;
 
   vec2 deltaXZ = worldXZ - ballXZ;
   float distToBall = length(deltaXZ);
+  float radius = GRASS_PATCH_SIZE;
+  float radiusFade = 1.0 - smoothstep(radius * 0.8, radius, distToBall);
 
-  float trailValue = 0.0;
-  if (distToBall < trailRadius) {
-    // Match BallTrailCanvas mapping:
-    // uv.x = 0.5 - (worldX - ballX) / patchSize
-    // uv.y = 0.5 - (worldZ - ballZ) / patchSize
-    vec2 trailUv = 0.5 - deltaXZ / patchSize;
+  // Map world → texture UV (ball-centered)
+  // uv.x = 0.5 - (worldX - ballX) / patchSize
+  // uv.y = 0.5 - (worldZ - ballZ) / patchSize
+  vec2 trailUv = 0.5 - deltaXZ / patchSize;
 
+  // fix left/right mirroring to match canvas
+  trailUv.x = 1.0 - trailUv.x;
 
-    // flip X to fix left/right mirroring
-    trailUv.x = 1.0 - trailUv.x;
+  trailUv = clamp(trailUv, 0.0, 1.0);
 
-    // keep inside texture bounds
-    trailUv = clamp(trailUv, 0.0, 1.0);
+    float trailValue = texture2D(uTrailTexture, trailUv).r;
 
-    trailValue = texture2D(uTrailTexture, trailUv).r;
+  // Flattening factor based on trail intensity
+  // Dark → tall grass, bright → flattened
+  float flattenFactor = smoothstep(0.6, 1.0, trailValue) * radiusFade;
+  float minHeightFactor = 0.2; // blades can shrink to 20% height
+  grassHeight *= mix(1.0, minHeightFactor, flattenFactor);
 
-    if (trailValue > 0.2) {
-      float flattenFactor = 1.0 - trailValue;
-      grassHeight *= flattenFactor;
-    }
+  // Gradient (3x3 Sobel-style) to get direction of the trail field
+  float texel = 1.0 / 256.0; // canvas is 256x256
+
+  vec2 t = vec2(texel, texel);
+
+  float T00 = texture2D(uTrailTexture, trailUv + vec2(-t.x, -t.y)).r;
+  float T10 = texture2D(uTrailTexture, trailUv + vec2( 0.0, -t.y)).r;
+  float T20 = texture2D(uTrailTexture, trailUv + vec2( t.x, -t.y)).r;
+
+  float T01 = texture2D(uTrailTexture, trailUv + vec2(-t.x,  0.0)).r;
+  float T21 = texture2D(uTrailTexture, trailUv + vec2( t.x,  0.0)).r;
+
+  float T02 = texture2D(uTrailTexture, trailUv + vec2(-t.x,  t.y)).r;
+  float T12 = texture2D(uTrailTexture, trailUv + vec2( 0.0,  t.y)).r;
+  float T22 = texture2D(uTrailTexture, trailUv + vec2( t.x,  t.y)).r;
+
+  // Sobel-ish gradient
+  float gx = (T20 + 2.0 * T21 + T22) - (T00 + 2.0 * T01 + T02);
+  float gy = (T02 + 2.0 * T12 + T22) - (T00 + 2.0 * T10 + T20);
+  vec2 grad = vec2(gx, gy);
+  float gradLen = length(grad);
+
+  // Bend direction and amount (computed now, applied later)
+  vec2 bendDirXZ = vec2(0.0);
+  float bendAmount = 0.0;
+
+  if (trailValue > 0.2 && gradLen > 0.0001) {
+    vec2 gradDir = grad / gradLen;       // towards brighter
+    bendDirXZ = -gradDir;                // bend away from bright center
+
+    float trailStrength = smoothstep(0.3, 1.0, trailValue);
+    float edgeFactor    = clamp(gradLen * 5.0, 0.0, 1.0); // 5.0 is tweak
+    bendAmount = trailStrength * edgeFactor * radiusFade;
   }
-  // --- end trail-based flattening ---
+
+  // ---------------------------------------------------------------------------
+  // End trail sampling & gradient
+  // ---------------------------------------------------------------------------
 
   // Figure out vertex id, > GRASS_VERTICES is other side
   int vertFB_ID = gl_VertexID % (GRASS_VERTICES * 2);
@@ -111,7 +148,7 @@ void main() {
   float leanFactor =
     remap(hashVal.y, -1.0, 1.0, -uLeanFactor, uLeanFactor) + randomLeanAnimation;
 
-  // Bend the grass blade
+  // Bend the grass blade (base curve from wind + randomness)
   vec3 p1 = vec3(0.0);
   vec3 p2 = vec3(0.0, 0.33, 0.0);
   vec3 p3 = vec3(0.0, 0.66, 0.0);
@@ -128,6 +165,14 @@ void main() {
 
   // Calculate the final position
   vec3 grassLocalPosition = grassMat * vec3(x, y, z) + grassOffset;
+
+  // Apply trail-based extra bend (stronger at tips)
+  if (bendAmount > 0.0) {
+    vec3 bendOffsetWorld = vec3(bendDirXZ.x, 0.0, bendDirXZ.y);
+    float maxBend = 0.5; // tweak: world units at tip when fully bent
+    vec3 extraBend = bendOffsetWorld * maxBend * heightPercent * bendAmount;
+    grassLocalPosition += extraBend;
+  }
 
   // Calculate normal
   vec3 curveGrad = bezierGrad(p1, p2, p3, p4, heightPercent);
@@ -174,5 +219,5 @@ void main() {
   vNormal = normalize((modelMatrix * vec4(grassLocalNormal, 0.0)).xyz);
   vWorldPosition = (modelMatrix * vec4(grassLocalPosition, 1.0)).xyz;
   vGrassData = vec4(x, heightPercent, xSide, 0.0);
-  vTrailValue = trailValue;
+  vTrailValue = trailValue * radiusFade;
 }
