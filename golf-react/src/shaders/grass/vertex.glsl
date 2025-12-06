@@ -14,7 +14,8 @@ uniform float uPositionZ;
 
 // trail data
 uniform sampler2D uTrailTexture;
-uniform vec3 uBallPosition;      // used to center trail sampling
+uniform vec3 uBallPosition;      // actual ball position for trail texture sampling
+uniform vec3 uCircleCenter;      // smoothed center for visual circle effect (lerps with camera)
 uniform float uTrailPatchSize;   // world size mapped to texture (matches CHUNK_SIZE)
 uniform float uTrailTexelSize;   // 1.0 / textureResolution
 uniform float uSobelMode;        // 0.0 = 4-tap, 1.0 = 8-tap Sobel
@@ -44,16 +45,38 @@ void main() {
   float grassHeight = 1.0;
 
   // ---------------------------------------------------------------------------
-  // Trail sampling (texture) + radial fade in world space
+  // Trail texture UV mapping (uses actual ball position)
   // ---------------------------------------------------------------------------
   vec2 worldXZ = grassBladeWorldPos.xz;
-  vec2 ballXZ  = uBallPosition.xz;
+  vec2 ballXZ  = uBallPosition.xz;  // actual ball position for trail texture
   float patchSize = uTrailPatchSize; // world dimension that maps to full texture
 
   vec2 deltaXZ = worldXZ - ballXZ;
-  float distToBall = length(deltaXZ);
+  
+  // ---------------------------------------------------------------------------
+  // Ball blend sphere – radial height fade at the chunk-sized circle
+  // Uses smoothed circle center for visual effect (lerps with camera)
+  // ---------------------------------------------------------------------------
+  vec2 circleXZ = uCircleCenter.xz;
+  vec2 deltaXZCircle = worldXZ - circleXZ;
+  float distToCircle = length(deltaXZCircle);
+  
+  // Circle radius ~ half of trail patch (i.e. roughly chunk size / 2)
+  float blendRadius = uTrailPatchSize * 0.4;
+  float blendInner  = blendRadius * 0.7;   // start fading a bit before the edge
 
-  // radial fade so trail influence smoothly disappears with distance
+  // 0 inside inner, 1 at and beyond blendRadius
+  float ballEdgeFade = smoothstep(blendInner, blendRadius, distToCircle);
+
+  // At the "white surround" edge grass should be very short / almost gone
+  float sphereMinHeightFactor = 0.15;
+  grassHeight *= mix(1.0, sphereMinHeightFactor, ballEdgeFade);
+
+  // ---------------------------------------------------------------------------
+  // Trail sampling (texture) + additional radial fade for trail itself
+  // Uses actual ball position for trail texture sampling
+  // ---------------------------------------------------------------------------
+  float distToBall = length(deltaXZ);  // distance to actual ball for trail texture
   float radius = uTrailPatchSize * 0.5;
   float radiusFade = 1.0 - smoothstep(radius * 0.8, radius, distToBall);
 
@@ -66,7 +89,7 @@ void main() {
   float trailValue = texture2D(uTrailTexture, trailUv).r;
 
   // ---------------------------------------------------------------------------
-  // Height flattening: bright trail areas push grass height down
+  // Height flattening from trail texture (bright → flattened)
   // ---------------------------------------------------------------------------
   float flattenFactor = smoothstep(0.6, 1.0, trailValue) * radiusFade;
   float minHeightFactor = 0.2; // blades can shrink to 20% of original height
@@ -186,14 +209,12 @@ void main() {
     // base: stronger bend near tips
     float bendProfile = heightPercent;
 
-    // reduce sideways bend where grass is already very flattened
-    // (so core of trail looks more "pressed down", edges bend more sideways)
+    // reduce sideways bend where grass is already very flattened by trail
     bendProfile *= (1.0 - flattenFactor);
 
     vec3 bendOffsetWorld = vec3(bendDirXZ.x, 0.0, bendDirXZ.y);
     float maxBend = 0.5;
     vec3 extraBend = bendOffsetWorld * maxBend * bendProfile * bendAmount;
-    // vec3 extraBend = bendOffsetWorld * maxBend * heightPercent * bendAmount;
     grassLocalPosition += extraBend;
   }
 

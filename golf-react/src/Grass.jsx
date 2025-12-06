@@ -12,7 +12,8 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
 
     // trail data from Zustand (shared with BallTrailCanvas)
     const trailTexture = useStore((s) => s.trailTexture)
-    const ballPosition = useStore((s) => s.ballPosition)
+    const ballPosition = useStore((s) => s.ballPosition) // actual ball position (for trail texture)
+    const smoothedCircleCenter = useStore((s) => s.smoothedCircleCenter) // smoothed center for circle effect
     const trailPatchSize = useStore((s) => s.trailPatchSize) // world size mapped onto trail texture
     const trailTexelSize = useStore((s) => s.trailTexelSize) // 1.0 / textureResolution
 
@@ -20,10 +21,10 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
     const controls = useControls('Grass', {
         colorBase: '#478f2a',
         colorTop: '#7bd948',
-        count: { value: 5000, min: 0, max: 5000, step: 10 },
-        segmentsCount: { value: 6, min: 1, max: 10, step: 1 },
-        width: { value: 0.12, min: 0, max: 0.4, step: 0.001 },
-        height: { value: 0.9, min: 0, max: 3, step: 0.01 },
+        count: { value: 2100, min: 0, max: 5000, step: 10 },
+        segmentsCount: { value: 5, min: 1, max: 10, step: 1 },
+        width: { value: 0.15, min: 0, max: 0.4, step: 0.001 },
+        height: { value: 1.4, min: 0, max: 3, step: 0.01 },
         leanFactor: { value: 0.25, min: 0, max: 1, step: 0.01 },
         squared: false,
         sobelMode: { value: 1.0, min: 0, max: 1, step: 1 },
@@ -31,9 +32,9 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
 
     // global wind for grass animation
     const windControls = useControls('Wind', {
-        scale: { value: 2.0, min: -5, max: 5, step: 0.01 },
-        strength: { value: 0.07, min: -1.5, max: 1.5, step: 0.01 },
-        speed: { value: 0.8, min: 0, max: 2, step: 0.01 },
+        scale: { value: 0.42, min: -5, max: 5, step: 0.01 },
+        strength: { value: 0.52, min: -1.5, max: 1.5, step: 0.01 },
+        speed: { value: 0.9, min: 0, max: 2, step: 0.01 },
     })
 
     // instanced grass geometry: one blade mesh, many instance positions
@@ -131,7 +132,8 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
 
                     // trail uniforms
                     uTrailTexture: { value: null },
-                    uBallPosition: { value: new THREE.Vector3() },
+                    uBallPosition: { value: new THREE.Vector3() }, // actual ball position for trail texture
+                    uCircleCenter: { value: new THREE.Vector3() }, // smoothed center for visual circle
                     uTrailPatchSize: { value: trailPatchSize },
                     uTrailTexelSize: { value: trailTexelSize },
                     uSobelMode: { value: controls.sobelMode }, // 0.0 = 4-tap, 1.0 = 8-tap Sobel
@@ -191,10 +193,13 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
         }
     }, [trailTexture, grassMaterial])
 
-    // per-frame time and ball position (for wind + trail mapping)
+    // per-frame time and positions (for wind + trail mapping)
     useFrame(({ clock }) => {
         grassMaterial.uniforms.uTime.value = clock.elapsedTime
+        // Actual ball position for trail texture sampling
         grassMaterial.uniforms.uBallPosition.value.copy(ballPosition)
+        // Smoothed circle center for visual circle effect (lerps with camera)
+        grassMaterial.uniforms.uCircleCenter.value.copy(smoothedCircleCenter)
     })
 
     // clean up GPU resources on unmount

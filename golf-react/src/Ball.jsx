@@ -15,7 +15,12 @@ export default function Ball() {
         () => new THREE.Vector3(10, 10, 10)
     )
     const [smoothedCameraTarget] = useState(() => new THREE.Vector3())
+    const [smoothedCircleCenter] = useState(() => new THREE.Vector3(0, 0, 0))
     const updateBallPosition = useStore((state) => state.updateBallPosition)
+    const updateSmoothedCircleCenter = useStore(
+        (state) => state.updateSmoothedCircleCenter
+    )
+    const cameraLerpSpeed = useStore((state) => state.cameraLerpSpeed)
 
     const jump = () => {
         if (!body.current) return
@@ -118,17 +123,23 @@ export default function Ball() {
         cameraPosition.copy(bodyPosition)
         // cameraPosition.z += 20.25
         // cameraPosition.y += 15.65
-        // cameraPosition.z += 10.0
-        // cameraPosition.y += 10.0
-        cameraPosition.z += 6.0
-        cameraPosition.y += 6.0
+        cameraPosition.z += 10.0
+        cameraPosition.y += 10.0
+        // cameraPosition.z += 6.0
+        // cameraPosition.y += 6.0
 
         const cameraTarget = new THREE.Vector3()
         cameraTarget.copy(bodyPosition)
         cameraTarget.y += 0.25
 
-        smoothedCameraPosition.lerp(cameraPosition, 20 * delta)
-        smoothedCameraTarget.lerp(cameraTarget, 20 * delta)
+        // Lerp camera and circle center with the same speed
+        const lerpFactor = cameraLerpSpeed * delta
+        smoothedCameraPosition.lerp(cameraPosition, lerpFactor)
+        smoothedCameraTarget.lerp(cameraTarget, lerpFactor)
+
+        // Smooth the circle center toward ball position (same lerp as camera)
+        smoothedCircleCenter.lerp(bodyPosition, lerpFactor)
+        updateSmoothedCircleCenter(smoothedCircleCenter)
 
         state.camera.position.copy(smoothedCameraPosition)
         state.camera.lookAt(smoothedCameraTarget)

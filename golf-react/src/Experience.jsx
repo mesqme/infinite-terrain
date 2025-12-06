@@ -10,7 +10,7 @@ import BallTrailCanvas from './BallTrailCanvas.jsx'
 export default function Experience() {
     return (
         <>
-            <color args={['#bdedfc']} attach="background" />
+            <color args={['#fff5cf']} attach="background" />
 
             <Perf position="top-left" />
 
