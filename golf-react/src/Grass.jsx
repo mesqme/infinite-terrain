@@ -16,17 +16,19 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
     const smoothedCircleCenter = useStore((s) => s.smoothedCircleCenter) // smoothed center for circle effect
     const trailPatchSize = useStore((s) => s.trailPatchSize) // world size mapped onto trail texture
     const trailTexelSize = useStore((s) => s.trailTexelSize) // 1.0 / textureResolution
+    const noiseStrength = useStore((s) => s.noiseStrength) // noise strength for irregular edge
+    const noiseScale = useStore((s) => s.noiseScale) // noise scale for irregular edge
+    const circleRadiusFactor = useStore((s) => s.circleRadiusFactor) // circle radius factor
 
     // grass look / distribution
     const controls = useControls('Grass', {
-        colorBase: '#478f2a',
-        colorTop: '#7bd948',
-        count: { value: 2100, min: 0, max: 5000, step: 10 },
+        colorBase: '#6b8f29', // #6b8f29 //#478f2a //#8a8f29
+        colorTop: '#b6c54f', // #b6c54f //#7bd948 //#c4c14f
+        count: { value: 1500, min: 0, max: 5000, step: 10 },
         segmentsCount: { value: 5, min: 1, max: 10, step: 1 },
         width: { value: 0.15, min: 0, max: 0.4, step: 0.001 },
-        height: { value: 1.4, min: 0, max: 3, step: 0.01 },
+        height: { value: 1.3, min: 0, max: 3, step: 0.01 },
         leanFactor: { value: 0.25, min: 0, max: 1, step: 0.01 },
-        squared: false,
         sobelMode: { value: 1.0, min: 0, max: 1, step: 1 },
     })
 
@@ -35,6 +37,49 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
         scale: { value: 0.42, min: -5, max: 5, step: 0.01 },
         strength: { value: 0.52, min: -1.5, max: 1.5, step: 0.01 },
         speed: { value: 0.9, min: 0, max: 2, step: 0.01 },
+    })
+
+    // noise texture for irregular edge
+    const noiseTexture = useMemo(() => {
+        const loader = new THREE.TextureLoader()
+        const texture = loader.load('/noiseTexture.png')
+        texture.wrapS = THREE.RepeatWrapping
+        texture.wrapT = THREE.RepeatWrapping
+        texture.minFilter = THREE.LinearFilter
+        texture.magFilter = THREE.LinearFilter
+        return texture
+    }, [])
+
+    // noise edge controls (now in store, but keep Leva for UI)
+    const setNoiseStrength = useStore((s) => s.setNoiseStrength)
+    const setNoiseScale = useStore((s) => s.setNoiseScale)
+    const setCircleRadiusFactor = useStore((s) => s.setCircleRadiusFactor)
+    const noiseControls = useControls('Noise Edge', {
+        strength: {
+            value: noiseStrength,
+            min: 0,
+            max: 1,
+            step: 0.01,
+            onChange: (value) => setNoiseStrength(value),
+        },
+        scale: {
+            value: noiseScale,
+            min: 0.1,
+            max: 10,
+            step: 0.1,
+            onChange: (value) => setNoiseScale(value),
+        },
+    })
+
+    // circle radius control
+    const circleControls = useControls('Circle', {
+        radiusFactor: {
+            value: circleRadiusFactor,
+            min: 0.1,
+            max: 1.0,
+            step: 0.01,
+            onChange: (value) => setCircleRadiusFactor(value),
+        },
     })
 
     // instanced grass geometry: one blade mesh, many instance positions
@@ -122,7 +167,6 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
                         value: new THREE.Color(controls.colorTop),
                     },
                     uLeanFactor: { value: controls.leanFactor },
-                    uSquareShape: { value: controls.squared },
                     uPositionX: { value: chunkX },
                     uPositionZ: { value: chunkZ },
 
@@ -137,6 +181,13 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
                     uTrailPatchSize: { value: trailPatchSize },
                     uTrailTexelSize: { value: trailTexelSize },
                     uSobelMode: { value: controls.sobelMode }, // 0.0 = 4-tap, 1.0 = 8-tap Sobel
+
+                    // noise texture for irregular edge
+                    uNoiseTexture: { value: noiseTexture },
+                    uNoiseStrength: { value: noiseStrength },
+                    uNoiseScale: { value: noiseScale },
+                    // circle radius factor
+                    uCircleRadiusFactor: { value: circleRadiusFactor },
                 },
                 vertexShader: grassVertexShader,
                 fragmentShader: grassFragmentShader,
@@ -150,6 +201,10 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
             chunkZ,
             trailPatchSize,
             trailTexelSize,
+            noiseTexture,
+            noiseStrength,
+            noiseScale,
+            circleRadiusFactor,
         ]
     )
 
@@ -166,7 +221,6 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
         grassMaterial.uniforms.uGrassParameters.value.z = controls.width
         grassMaterial.uniforms.uGrassParameters.value.w = controls.height
         grassMaterial.uniforms.uLeanFactor.value = controls.leanFactor
-        grassMaterial.uniforms.uSquareShape.value = controls.squared
         grassMaterial.uniforms.uWindScale.value = windControls.scale
         grassMaterial.uniforms.uWindStrength.value = windControls.strength
         grassMaterial.uniforms.uWindSpeed.value = windControls.speed
@@ -174,6 +228,9 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
         grassMaterial.uniforms.uPositionZ.value = chunkZ
         grassMaterial.uniforms.uTrailPatchSize.value = trailPatchSize
         grassMaterial.uniforms.uTrailTexelSize.value = trailTexelSize
+        grassMaterial.uniforms.uNoiseStrength.value = noiseStrength
+        grassMaterial.uniforms.uNoiseScale.value = noiseScale
+        grassMaterial.uniforms.uCircleRadiusFactor.value = circleRadiusFactor
         // uSobelMode is set in useMemo, no need to update here
     }, [
         controls,
@@ -184,6 +241,9 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
         chunkZ,
         trailPatchSize,
         trailTexelSize,
+        noiseStrength,
+        noiseScale,
+        circleRadiusFactor,
     ])
 
     // attach trail texture once it's available
@@ -207,8 +267,9 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
         return () => {
             grassGeometry.dispose()
             grassMaterial.dispose()
+            noiseTexture.dispose()
         }
-    }, [grassGeometry, grassMaterial])
+    }, [grassGeometry, grassMaterial, noiseTexture])
 
     // we don't need scene here, but this keeps hook ordering consistent
     useThree((state) => state.scene)

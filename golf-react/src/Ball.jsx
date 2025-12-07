@@ -2,12 +2,18 @@ import { useRapier, RigidBody } from '@react-three/rapier'
 import { useFrame } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
 import { useState, useEffect, useRef } from 'react'
+import { useControls } from 'leva'
 import * as THREE from 'three'
+
 import useStore from './stores/useStore.jsx'
 
-const RAYCASTER_ORIGIN_Y_OFFSET = 0.25
+const RAYCASTER_ORIGIN_Y_OFFSET = 0.35
 
 export default function Ball() {
+    const controls = useControls('Ball', {
+        color: '#565893',
+    })
+
     const body = useRef()
     const [subscribeKeys, getKeys] = useKeyboardControls()
     const { rapier, world } = useRapier()
@@ -21,6 +27,7 @@ export default function Ball() {
         (state) => state.updateSmoothedCircleCenter
     )
     const cameraLerpSpeed = useStore((state) => state.cameraLerpSpeed)
+    const setLandBallDistance = useStore((state) => state.setLandBallDistance)
 
     const jump = () => {
         if (!body.current) return
@@ -46,7 +53,7 @@ export default function Ball() {
         )
 
         if (hit && hit.timeOfImpact < 0.15) {
-            body.current.applyImpulse({ x: 0, y: 0.5, z: 0 })
+            body.current.applyImpulse({ x: 0, y: 2.0, z: 0 })
         }
     }
 
@@ -78,8 +85,8 @@ export default function Ball() {
         const impulse = { x: 0, y: 0, z: 0 }
         const torque = { x: 0, y: 0, z: 0 }
 
-        const impulseStrength = 0.6 * delta
-        const torqueStrength = 0.2 * delta
+        const impulseStrength = 1.8 * delta
+        const torqueStrength = 0.5 * delta
 
         if (forward) {
             impulse.z -= impulseStrength
@@ -105,9 +112,43 @@ export default function Ball() {
         body.current.applyTorqueImpulse(torque)
 
         /**
-         * Camera
+         * Raycast to ground to get distance
          */
         const bodyPosition = body.current.translation()
+        const origin = {
+            x: bodyPosition.x,
+            y: bodyPosition.y,
+            z: bodyPosition.z,
+        }
+        origin.y -= RAYCASTER_ORIGIN_Y_OFFSET
+        const direction = { x: 0, y: -1, z: 0 }
+        const ray = new rapier.Ray(origin, direction)
+
+        const hit = world.castRay(
+            ray,
+            10,
+            false,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            (collider) => {
+                // Exclude the ball rigid body from ray detection
+                return collider.parent()?.userData?.name !== 'ball'
+            }
+        )
+
+        // Update land distance in store
+        if (hit) {
+            setLandBallDistance(hit.timeOfImpact)
+        } else {
+            // If no hit, set to a large distance (glow will be off)
+            setLandBallDistance(10.0)
+        }
+
+        /**
+         * Camera
+         */
 
         // Update ball position in store
         updateBallPosition(
@@ -123,7 +164,7 @@ export default function Ball() {
         cameraPosition.copy(bodyPosition)
         // cameraPosition.z += 20.25
         // cameraPosition.y += 15.65
-        cameraPosition.z += 10.0
+        cameraPosition.z += 12.0
         cameraPosition.y += 10.0
         // cameraPosition.z += 6.0
         // cameraPosition.y += 6.0
@@ -159,8 +200,8 @@ export default function Ball() {
             userData={{ name: 'ball' }}
         >
             <mesh castShadow>
-                <icosahedronGeometry args={[0.3, 1]} />
-                <meshStandardMaterial flatShading color="mediumpurple" />
+                <icosahedronGeometry args={[0.4, 1]} />
+                <meshStandardMaterial flatShading color={controls.color} />
             </mesh>
         </RigidBody>
     )

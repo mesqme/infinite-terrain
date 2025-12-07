@@ -13,6 +13,7 @@ export default function BallTrailCanvas() {
     const ballPosition = useStore((state) => state.ballPosition)
     const setTrailTexture = useStore((state) => state.setTrailTexture)
     const trailPatchSize = useStore((state) => state.trailPatchSize)
+    const landBallDistance = useStore((state) => state.landBallDistance)
 
     const canvasRef = useRef(null)
     const textureRef = useRef(null)
@@ -108,7 +109,23 @@ export default function BallTrailCanvas() {
 
         const baseAlpha = 0.3
         const speedAlpha = Math.min(movementDistance * 0.05, 0.7)
-        const alpha = Math.min(baseAlpha + speedAlpha, 1)
+        let alpha = Math.min(baseAlpha + speedAlpha, 1)
+
+        // Modulate alpha based on distance to ground
+        // RAYCASTER_ORIGIN_Y_OFFSET = 0.35 is where glow starts decreasing
+        // Distance >= 1.0 means glow is completely off
+        const RAYCASTER_ORIGIN_Y_OFFSET = 0.35
+        const MAX_DISTANCE = 1.0
+
+        if (landBallDistance > RAYCASTER_ORIGIN_Y_OFFSET) {
+            // Interpolate from full strength at RAYCASTER_ORIGIN_Y_OFFSET to 0 at MAX_DISTANCE
+            const t = Math.min(
+                (landBallDistance - RAYCASTER_ORIGIN_Y_OFFSET) /
+                    (MAX_DISTANCE - RAYCASTER_ORIGIN_Y_OFFSET),
+                1.0
+            )
+            alpha *= 1.0 - t // Decrease alpha as distance increases
+        }
 
         const glowSize = canvas.width * GLOW_SIZE
 

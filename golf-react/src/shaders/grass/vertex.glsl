@@ -2,7 +2,6 @@ uniform vec4 uGrassParameters;   // x: segments, y: patchSizeHalf, z: width, w: 
 uniform vec3 uGrassBaseColor;
 uniform vec3 uGrassTopColor;
 uniform float uTime;
-uniform bool uSquareShape;
 uniform float uLeanFactor;
 
 uniform float uWindScale;
@@ -19,6 +18,12 @@ uniform vec3 uCircleCenter;      // smoothed center for visual circle effect (le
 uniform float uTrailPatchSize;   // world size mapped to texture (matches CHUNK_SIZE)
 uniform float uTrailTexelSize;   // 1.0 / textureResolution
 uniform float uSobelMode;        // 0.0 = 4-tap, 1.0 = 8-tap Sobel
+
+// noise texture for irregular edge
+uniform sampler2D uNoiseTexture;
+uniform float uNoiseStrength;    // how much noise affects the edge (0-1)
+uniform float uNoiseScale;       // scale of noise sampling
+uniform float uCircleRadiusFactor; // multiplier for uTrailPatchSize to get circle radius
 
 attribute vec3 aInstancePosition; // per-blade base position in chunk space
 
@@ -56,16 +61,27 @@ void main() {
   // ---------------------------------------------------------------------------
   // Ball blend sphere – radial height fade at the chunk-sized circle
   // Uses smoothed circle center for visual effect (lerps with camera)
+  // Applies Perlin noise from texture to create irregular edge
   // ---------------------------------------------------------------------------
   vec2 circleXZ = uCircleCenter.xz;
   vec2 deltaXZCircle = worldXZ - circleXZ;
   float distToCircle = length(deltaXZCircle);
   
   // Circle radius ~ half of trail patch (i.e. roughly chunk size / 2)
-  float blendRadius = uTrailPatchSize * 0.4;
+  float baseBlendRadius = uTrailPatchSize * uCircleRadiusFactor;
+  
+  // Sample noise texture based on world position to create irregular edge
+  vec2 noiseUV = worldXZ * uNoiseScale * 0.01; // scale noise sampling
+  float noiseValue = texture2D(uNoiseTexture, noiseUV).r; // sample Perlin noise (0-1)
+  
+  // Remap noise from 0-1 to -1 to 1, then apply strength
+  float noiseOffset = (noiseValue - 0.5) * 2.0 * uNoiseStrength;
+  
+  // Apply noise offset to the radius to create irregular edge
+  float blendRadius = baseBlendRadius * (1.0 + noiseOffset);
   float blendInner  = blendRadius * 0.7;   // start fading a bit before the edge
 
-  // 0 inside inner, 1 at and beyond blendRadius
+  // 0 inside inner, 1 at and beyond blendRadius (now irregular due to noise)
   float ballEdgeFade = smoothstep(blendInner, blendRadius, distToCircle);
 
   // At the "white surround" edge grass should be very short / almost gone
@@ -161,9 +177,7 @@ void main() {
   float heightPercent = float(vertID - xTest) / (float(GRASS_SEGMENTS) * 2.0);
 
   float randomHeight = (rand(float(gl_InstanceID)) * 2.0 - 1.0) * 0.1;
-  float width = uSquareShape
-    ? GRASS_WIDTH
-    : GRASS_WIDTH * easeOut(1.08 - heightPercent, 2.0) * grassHeight;
+  float width = GRASS_WIDTH * easeOut(1.08 - heightPercent, 2.0) * grassHeight;
   float height = GRASS_HEIGHT * grassHeight + randomHeight;
 
   float x = (xSide - 0.5) * width;

@@ -12,12 +12,26 @@ import terrainFragmentShader from './shaders/ground/fragment.glsl'
 
 export default function TerrainChunk({ x, z, size, noise2D }) {
     const controls = useControls('TerrainChunk', {
-        color: '#a79a65',
-        fadeColor: '#fff5cf',
+        color: '#8f844f', //#8f844f
+        fadeColor: '#9a9065', //#4b483f //#5f8da0 //#9a9065 //#807750
     })
 
     const smoothedCircleCenter = useStore((s) => s.smoothedCircleCenter) // smoothed center for circle effect
     const trailPatchSize = useStore((s) => s.trailPatchSize)
+    const noiseStrength = useStore((s) => s.noiseStrength) // noise strength for irregular edge
+    const noiseScale = useStore((s) => s.noiseScale) // noise scale for irregular edge
+    const circleRadiusFactor = useStore((s) => s.circleRadiusFactor) // circle radius factor
+
+    // noise texture for irregular edge (shared with grass)
+    const noiseTexture = useMemo(() => {
+        const loader = new THREE.TextureLoader()
+        const texture = loader.load('/noiseTexture.png')
+        texture.wrapS = THREE.RepeatWrapping
+        texture.wrapT = THREE.RepeatWrapping
+        texture.minFilter = THREE.LinearFilter
+        texture.magFilter = THREE.LinearFilter
+        return texture
+    }, [])
 
     const geometry = useMemo(() => {
         if (!noise2D) return null
@@ -56,17 +70,41 @@ export default function TerrainChunk({ x, z, size, noise2D }) {
                 uFadeColor: { value: new THREE.Color(controls.fadeColor) },
                 uCircleCenter: { value: new THREE.Vector3() }, // smoothed center for visual circle
                 uTrailPatchSize: { value: trailPatchSize },
+                // noise texture for irregular edge
+                uNoiseTexture: { value: noiseTexture },
+                uNoiseStrength: { value: noiseStrength },
+                uNoiseScale: { value: noiseScale },
+                // circle radius factor
+                uCircleRadiusFactor: { value: circleRadiusFactor },
             },
             vertexShader: terrainVertexShader,
             fragmentShader: terrainFragmentShader,
         })
-    }, [controls.color, controls.fadeColor, trailPatchSize])
+    }, [
+        controls.color,
+        controls.fadeColor,
+        trailPatchSize,
+        noiseTexture,
+        noiseStrength,
+        noiseScale,
+        circleRadiusFactor,
+    ])
 
     // Keep uniforms in sync with Leva / store
     useEffect(() => {
         material.uniforms.uBaseColor.value.set(controls.color)
         material.uniforms.uTrailPatchSize.value = trailPatchSize
-    }, [controls.color, trailPatchSize, material])
+        material.uniforms.uNoiseStrength.value = noiseStrength
+        material.uniforms.uNoiseScale.value = noiseScale
+        material.uniforms.uCircleRadiusFactor.value = circleRadiusFactor
+    }, [
+        controls.color,
+        trailPatchSize,
+        noiseStrength,
+        noiseScale,
+        circleRadiusFactor,
+        material,
+    ])
 
     // Per-frame: use smoothed circle center (lerps with camera)
     useFrame(() => {
@@ -77,8 +115,9 @@ export default function TerrainChunk({ x, z, size, noise2D }) {
         return () => {
             geometry?.dispose()
             material.dispose()
+            noiseTexture.dispose()
         }
-    }, [geometry, material])
+    }, [geometry, material, noiseTexture])
 
     if (!geometry) return null
 
