@@ -24,10 +24,10 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
     const controls = useControls('Grass', {
         colorBase: '#6b8f29', // #6b8f29 //#478f2a //#8a8f29
         colorTop: '#b6c54f', // #b6c54f //#7bd948 //#c4c14f
-        count: { value: 1500, min: 0, max: 5000, step: 10 },
-        segmentsCount: { value: 5, min: 1, max: 10, step: 1 },
-        width: { value: 0.15, min: 0, max: 0.4, step: 0.001 },
-        height: { value: 1.3, min: 0, max: 3, step: 0.01 },
+        count: { value: 1500, min: 0, max: 5000, step: 10 }, // 3000
+        segmentsCount: { value: 5, min: 1, max: 10, step: 1 }, //4
+        width: { value: 0.15, min: 0, max: 0.4, step: 0.001 }, // 0.12
+        height: { value: 1.3, min: 0, max: 3, step: 0.01 }, // 1.0
         leanFactor: { value: 0.25, min: 0, max: 1, step: 0.01 },
         sobelMode: { value: 1.0, min: 0, max: 1, step: 1 },
     })

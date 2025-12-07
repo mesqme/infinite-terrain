@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import useStore from './stores/useStore.jsx'
 
 const TRAIL_CANVAS_SIZE = 256
-const GLOW_SIZE = 0.1
+const GLOW_SIZE = 0.12
 const FADE_ALPHA = 0.01
 const MOVE_EPSILON = 0.001
 
