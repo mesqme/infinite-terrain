@@ -104,6 +104,14 @@ void main() {
   // scalar trail intensity at this blade
   float trailValue = texture2D(uTrailTexture, trailUv).r;
 
+  // Extra clamp very close to the ball, modulated by trail texture (goes black when ball is airborne)
+  float nearBallRadius = uTrailPatchSize * 0.1;
+  float nearBallFade = 1.0 - smoothstep(0.0, nearBallRadius, distToBall); // 1 at center → 0 at radius
+  float nearBallMinHeight = 0.4; // minimum proportion when touching the ball
+  // If trailValue is black (ball jumping), the clamp is suppressed; brightest keeps the clamp
+  float nearBallClamp = nearBallFade * trailValue;
+  grassHeight *= mix(1.0, nearBallMinHeight, nearBallClamp);
+
   // ---------------------------------------------------------------------------
   // Height flattening from trail texture (bright → flattened)
   // ---------------------------------------------------------------------------
@@ -190,7 +198,7 @@ void main() {
   float windStrength = noise(
     vec3(grassBladeWorldPos.xz * uWindScale, 0.0) + uTime * uWindSpeed
   );
-  float windAngle = 0.0;
+  float windAngle = 0.6;
   vec3 windAxis = vec3(cos(windAngle), 0.0, sin(windAngle));
   float windLeanAngle = windStrength * uWindStrength * heightPercent;
   float randomLeanAnimation =

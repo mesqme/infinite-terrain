@@ -11,7 +11,7 @@ const RAYCASTER_ORIGIN_Y_OFFSET = 0.35
 
 export default function Ball() {
     const controls = useControls('Ball', {
-        color: '#565893',
+        color: '#9a4141', //#ab5757 //#5657aa //#9a4141
     })
 
     const body = useRef()
@@ -166,8 +166,8 @@ export default function Ball() {
         // cameraPosition.y += 15.65
         cameraPosition.z += 12.0
         cameraPosition.y += 10.0
-        // cameraPosition.z += 6.0
-        // cameraPosition.y += 6.0
+        // cameraPosition.z += 3.0
+        // cameraPosition.y += 3.0
 
         const cameraTarget = new THREE.Vector3()
         cameraTarget.copy(bodyPosition)

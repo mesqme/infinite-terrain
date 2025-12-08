@@ -22,27 +22,27 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
 
     // grass look / distribution
     const controls = useControls('Grass', {
-        colorBase: '#6b8f29', // #6b8f29 //#478f2a //#8a8f29
-        colorTop: '#b6c54f', // #b6c54f //#7bd948 //#c4c14f
-        count: { value: 1500, min: 0, max: 5000, step: 10 }, // 3000
-        segmentsCount: { value: 5, min: 1, max: 10, step: 1 }, //4
-        width: { value: 0.15, min: 0, max: 0.4, step: 0.001 }, // 0.12
-        height: { value: 1.3, min: 0, max: 3, step: 0.01 }, // 1.0
-        leanFactor: { value: 0.25, min: 0, max: 1, step: 0.01 },
+        colorBase: '#669019', // #6b8f29 //#478f2a //#8a8f29 //#669019
+        colorTop: '#acc125', // #b6c54f //#7bd948 //#c4c14f //#acc125
+        count: { value: 1900, min: 0, max: 5000, step: 10 }, // 3000 //1500
+        segmentsCount: { value: 4, min: 1, max: 10, step: 1 }, //4 //5
+        width: { value: 0.15, min: 0, max: 0.4, step: 0.001 }, // 0.12 //0.15
+        height: { value: 1.15, min: 0, max: 3, step: 0.01 }, // 1.0 //1.3
+        leanFactor: { value: 0.2, min: 0, max: 1, step: 0.01 },
         sobelMode: { value: 1.0, min: 0, max: 1, step: 1 },
     })
 
     // global wind for grass animation
     const windControls = useControls('Wind', {
-        scale: { value: 0.42, min: -5, max: 5, step: 0.01 },
-        strength: { value: 0.52, min: -1.5, max: 1.5, step: 0.01 },
-        speed: { value: 0.9, min: 0, max: 2, step: 0.01 },
+        scale: { value: 0.35, min: -2, max: 2, step: 0.001 },
+        strength: { value: 0.7, min: -1.5, max: 1.5, step: 0.001 },
+        speed: { value: 1.0, min: 0, max: 2, step: 0.01 },
     })
 
     // noise texture for irregular edge
     const noiseTexture = useMemo(() => {
         const loader = new THREE.TextureLoader()
-        const texture = loader.load('/noiseTexture.png')
+        const texture = loader.load('/textures/noiseTexture.png')
         texture.wrapS = THREE.RepeatWrapping
         texture.wrapT = THREE.RepeatWrapping
         texture.minFilter = THREE.LinearFilter

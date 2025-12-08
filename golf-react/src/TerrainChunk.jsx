@@ -12,8 +12,8 @@ import terrainFragmentShader from './shaders/ground/fragment.glsl'
 
 export default function TerrainChunk({ x, z, size, noise2D }) {
     const controls = useControls('TerrainChunk', {
-        color: '#8f844f', //#8f844f
-        fadeColor: '#9a9065', //#4b483f //#5f8da0 //#9a9065 //#807750
+        color: '#908343', //#8f844f //#8d7f3c //#908343
+        fadeColor: '#9a9065', //#4b483f //#5f8da0 //#9a9065 //#807750 //#9a8c4f
     })
 
     const smoothedCircleCenter = useStore((s) => s.smoothedCircleCenter) // smoothed center for circle effect
@@ -25,7 +25,7 @@ export default function TerrainChunk({ x, z, size, noise2D }) {
     // noise texture for irregular edge (shared with grass)
     const noiseTexture = useMemo(() => {
         const loader = new THREE.TextureLoader()
-        const texture = loader.load('/noiseTexture.png')
+        const texture = loader.load('/textures/noiseTexture.png')
         texture.wrapS = THREE.RepeatWrapping
         texture.wrapT = THREE.RepeatWrapping
         texture.minFilter = THREE.LinearFilter
