@@ -11,7 +11,7 @@ const RAYCASTER_ORIGIN_Y_OFFSET = 0.35
 
 export default function Ball() {
     const controls = useControls('Ball', {
-        color: '#9a4141', //#ab5757 //#5657aa //#9a4141
+        color: '#c7442d', //#ab5757 //#5657aa //#9a4141 //#a73434 //#a64533 //#aa3232
     })
 
     const body = useRef()
