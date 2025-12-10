@@ -184,7 +184,7 @@ void main() {
   float zSide = float(zTest);   // front/back side
   float heightPercent = float(vertID - xTest) / (float(GRASS_SEGMENTS) * 2.0);
 
-  float randomHeight = (rand(float(gl_InstanceID)) * 2.0 - 1.0) * 0.1;
+  float randomHeight = (rand(float(gl_InstanceID)) * 2.0 - 1.0) * 0.2;
   float width = GRASS_WIDTH * easeOut(1.08 - heightPercent, 2.0) * grassHeight;
   float height = GRASS_HEIGHT * grassHeight + randomHeight;
 

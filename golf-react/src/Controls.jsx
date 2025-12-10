@@ -3,11 +3,76 @@ import useStore from './stores/useStore.jsx'
 
 export default function Controls() {
     /**
+     * Terrain Chunk parameters
+     */
+    useControls('Terrain', {
+        color: {
+            value: useStore.getState().terrainParameters.color,
+            onChange: (value) =>
+                useStore.setState({
+                    terrainParameters: {
+                        ...useStore.getState().terrainParameters,
+                        color: value,
+                    },
+                }),
+        },
+        fadeColor: {
+            value: useStore.getState().terrainParameters.fadeColor,
+            onChange: (value) =>
+                useStore.setState({
+                    terrainParameters: {
+                        ...useStore.getState().terrainParameters,
+                        fadeColor: value,
+                    },
+                }),
+        },
+        segments: {
+            value: useStore.getState().terrainParameters.segments,
+            min: 1,
+            max: 100,
+            step: 1,
+            onChange: (value) =>
+                useStore.setState({
+                    terrainParameters: {
+                        ...useStore.getState().terrainParameters,
+                        segments: value,
+                    },
+                }),
+        },
+        scale: {
+            value: useStore.getState().terrainParameters.scale,
+            min: 0,
+            max: 1,
+            step: 0.01,
+            onChange: (value) =>
+                useStore.setState({
+                    terrainParameters: {
+                        ...useStore.getState().terrainParameters,
+                        scale: value,
+                    },
+                }),
+        },
+        amplitude: {
+            value: useStore.getState().terrainParameters.amplitude,
+            min: 0,
+            max: 10,
+            step: 0.1,
+            onChange: (value) =>
+                useStore.setState({
+                    terrainParameters: {
+                        ...useStore.getState().terrainParameters,
+                        amplitude: value,
+                    },
+                }),
+        },
+    })
+
+    /**
      * Border parameters
      */
     useControls('Border', {
         nStrength: {
-            value: 0.75,
+            value: useStore.getState().borderParameters.noiseStrength,
             min: 0,
             max: 1,
             step: 0.01,
@@ -20,7 +85,7 @@ export default function Controls() {
                 }),
         },
         nScale: {
-            value: 3.5,
+            value: useStore.getState().borderParameters.noiseScale,
             min: 0.1,
             max: 10,
             step: 0.1,
@@ -33,7 +98,7 @@ export default function Controls() {
                 }),
         },
         radius: {
-            value: 0.5,
+            value: useStore.getState().borderParameters.circleRadiusFactor,
             min: 0.1,
             max: 1,
             step: 0.01,
@@ -52,7 +117,7 @@ export default function Controls() {
      */
     useControls('Grass', {
         colorBase: {
-            value: '#669019',
+            value: useStore.getState().grassParameters.colorBase,
             onChange: (value) =>
                 useStore.setState({
                     grassParameters: {
@@ -62,7 +127,7 @@ export default function Controls() {
                 }),
         },
         colorTop: {
-            value: '#acc125',
+            value: useStore.getState().grassParameters.colorTop,
             onChange: (value) =>
                 useStore.setState({
                     grassParameters: {
@@ -72,7 +137,7 @@ export default function Controls() {
                 }),
         },
         count: {
-            value: 1900,
+            value: useStore.getState().grassParameters.count,
             min: 0,
             max: 5000,
             step: 10,
@@ -85,7 +150,7 @@ export default function Controls() {
                 }),
         },
         segments: {
-            value: 4,
+            value: useStore.getState().grassParameters.segmentsCount,
             min: 1,
             max: 10,
             step: 1,
@@ -98,7 +163,7 @@ export default function Controls() {
                 }),
         },
         width: {
-            value: 0.15,
+            value: useStore.getState().grassParameters.width,
             min: 0,
             max: 0.4,
             step: 0.001,
@@ -111,7 +176,7 @@ export default function Controls() {
                 }),
         },
         height: {
-            value: 1.15,
+            value: useStore.getState().grassParameters.height,
             min: 0,
             max: 3,
             step: 0.01,
@@ -124,7 +189,7 @@ export default function Controls() {
                 }),
         },
         lean: {
-            value: 0.2,
+            value: useStore.getState().grassParameters.leanFactor,
             min: 0,
             max: 1,
             step: 0.01,
@@ -138,6 +203,7 @@ export default function Controls() {
         },
         sobelMode: {
             options: ['3x3', '2x2'],
+            value: useStore.getState().grassParameters.sobelMode,
             onChange: (value) =>
                 useStore.setState({
                     grassParameters: {
@@ -147,7 +213,7 @@ export default function Controls() {
                 }),
         },
         wScale: {
-            value: 0.35,
+            value: useStore.getState().grassParameters.windScale,
             min: 0,
             max: 1,
             step: 0.01,
@@ -160,7 +226,7 @@ export default function Controls() {
                 }),
         },
         wStrength: {
-            value: 0.7,
+            value: useStore.getState().grassParameters.windStrength,
             min: 0,
             max: 1,
             step: 0.01,
@@ -173,7 +239,7 @@ export default function Controls() {
                 }),
         },
         wSpeed: {
-            value: 1.0,
+            value: useStore.getState().grassParameters.windSpeed,
             min: 0,
             max: 2,
             step: 0.01,
@@ -218,13 +284,39 @@ export default function Controls() {
         glowSize: {
             value: useStore.getState().trailParameters.glowSize,
             min: 0,
-            max: 1,
+            max: 0.2,
             step: 0.01,
             onChange: (value) =>
                 useStore.setState({
                     trailParameters: {
                         ...useStore.getState().trailParameters,
                         glowSize: value,
+                    },
+                }),
+        },
+        fadeAlpha: {
+            value: useStore.getState().trailParameters.fadeAlpha,
+            min: 0,
+            max: 0.5,
+            step: 0.01,
+            onChange: (value) =>
+                useStore.setState({
+                    trailParameters: {
+                        ...useStore.getState().trailParameters,
+                        fadeAlpha: value,
+                    },
+                }),
+        },
+        glowAlpha: {
+            value: useStore.getState().trailParameters.glowAlpha,
+            min: 0,
+            max: 1,
+            step: 0.01,
+            onChange: (value) =>
+                useStore.setState({
+                    trailParameters: {
+                        ...useStore.getState().trailParameters,
+                        glowAlpha: value,
                     },
                 }),
         },
@@ -245,7 +337,7 @@ export default function Controls() {
      */
     useControls('Ball', {
         color: {
-            value: '#c7442d',
+            value: useStore.getState().ballParameters.color,
             onChange: (value) =>
                 useStore.setState({
                     ballParameters: {

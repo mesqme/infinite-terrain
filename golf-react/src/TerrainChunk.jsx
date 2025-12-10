@@ -11,21 +11,17 @@ import terrainVertexShader from './shaders/terrain/vertex.glsl'
 import terrainFragmentShader from './shaders/terrain/fragment.glsl'
 
 export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
-    const controls = useControls('Terrain', {
-        color: '#908343',
-        fadeColor: '#9a9065',
-    })
-
-    const meshRef = useRef(null)
-
+    const terrainParameters = useStore((s) => s.terrainParameters)
     const trailParameters = useStore((s) => s.trailParameters)
     const borderParameters = useStore((s) => s.borderParameters)
 
+    const meshRef = useRef(null)
+
     // Geometry
     const geometry = useMemo(() => {
-        const segments = 32
-        const scale = 0.05
-        const amplitude = 2
+        const segments = terrainParameters.segments
+        const scale = terrainParameters.scale
+        const amplitude = terrainParameters.amplitude
 
         const geo = new THREE.PlaneGeometry(size, size, segments, segments)
         const posAttribute = geo.attributes.position
@@ -47,14 +43,16 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
         }
 
         return geo
-    }, [noise2D, size, x, z])
+    }, [noise2D, size, x, z, terrainParameters])
 
     // Material
     const material = useMemo(() => {
         return new THREE.ShaderMaterial({
             uniforms: {
-                uBaseColor: { value: new THREE.Color(controls.color) },
-                uFadeColor: { value: new THREE.Color(controls.fadeColor) },
+                uBaseColor: { value: new THREE.Color(terrainParameters.color) },
+                uFadeColor: {
+                    value: new THREE.Color(terrainParameters.fadeColor),
+                },
                 uCircleCenter: { value: new THREE.Vector3() },
                 uTrailPatchSize: { value: trailParameters.patchSize },
                 uNoiseTexture: { value: noiseTexture },
@@ -67,7 +65,7 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
             vertexShader: terrainVertexShader,
             fragmentShader: terrainFragmentShader,
         })
-    }, [controls, trailParameters, noiseTexture, borderParameters])
+    }, [terrainParameters, trailParameters, borderParameters, noiseTexture])
 
     useFrame(() => {
         const circleCenter = useStore.getState().smoothedCircleCenter

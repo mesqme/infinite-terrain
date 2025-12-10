@@ -6,7 +6,9 @@ import * as THREE from 'three'
 
 import useStore from './stores/useStore.jsx'
 
-const RAYCASTER_ORIGIN_Y_OFFSET = 0.35
+const BALL_RADIUS = 0.4
+const GROUND_GAP = 0.05 // remember to keep it below the time of impact threshold
+const TIME_OF_IMPACT_THRESHOLD = 0.15
 
 export default function Ball() {
     const ballParameters = useStore((state) => state.ballParameters)
@@ -31,7 +33,7 @@ export default function Ball() {
 
         // Start the ray slightly inside the ball and ignore the ball collider itself
         const origin = body.current.translation()
-        origin.y -= RAYCASTER_ORIGIN_Y_OFFSET
+        origin.y -= BALL_RADIUS - GROUND_GAP
         const direction = { x: 0, y: -1, z: 0 }
         const ray = new rapier.Ray(origin, direction)
 
@@ -49,7 +51,7 @@ export default function Ball() {
             }
         )
 
-        if (hit && hit.timeOfImpact < 0.15) {
+        if (hit && hit.timeOfImpact < TIME_OF_IMPACT_THRESHOLD) {
             body.current.applyImpulse({ x: 0, y: 2.0, z: 0 })
         }
     }
@@ -117,7 +119,7 @@ export default function Ball() {
             y: bodyPosition.y,
             z: bodyPosition.z,
         }
-        origin.y -= RAYCASTER_ORIGIN_Y_OFFSET
+        origin.y -= BALL_RADIUS - GROUND_GAP
         const direction = { x: 0, y: -1, z: 0 }
         const ray = new rapier.Ray(origin, direction)
 
@@ -197,7 +199,7 @@ export default function Ball() {
             userData={{ name: 'ball' }}
         >
             <mesh castShadow>
-                <icosahedronGeometry args={[0.4, 1]} />
+                <icosahedronGeometry args={[BALL_RADIUS, 1]} />
                 <meshStandardMaterial
                     flatShading
                     color={ballParameters.color}

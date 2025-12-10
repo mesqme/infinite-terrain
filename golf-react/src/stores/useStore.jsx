@@ -38,6 +38,20 @@ const useStore = create((set) => ({
         set({ landBallDistance: distance })
     },
 
+    /**
+     * Terrain parameters
+     */
+    terrainParameters: {
+        color: '#908343',
+        fadeColor: '#9a9065',
+        segments: 32,
+        scale: 0.05,
+        amplitude: 2,
+    },
+    setTerrainParameters: (parameters) => {
+        set({ terrainParameters: parameters })
+    },
+
     /**Border parameters */
     borderParameters: {
         noiseStrength: 0.75,
@@ -59,7 +73,7 @@ const useStore = create((set) => ({
         width: 0.15,
         height: 1.15,
         leanFactor: 0.2,
-        sobelMode: 1.0,
+        sobelMode: '3x3',
         windScale: 0.35,
         windStrength: 0.7,
         windSpeed: 1.0,
@@ -71,14 +85,17 @@ const useStore = create((set) => ({
     /**
      * Trail parameters
      */
-    trailParameters: { ...DEFAULT_TRAIL_PARAMETERS },
-    setTrailParameters: (parameters) =>
-        set((state) => ({
-            trailParameters: {
-                ...state.trailParameters,
-                ...parameters,
-            },
-        })),
+    trailParameters: {
+        canvasSize: 256,
+        patchSize: 15,
+        glowSize: 0.12,
+        fadeAlpha: 0.1,
+        glowAlpha: 0.4,
+        showCanvas: true,
+    },
+    setTrailParameters: (parameters) => {
+        set({ trailParameters: parameters })
+    },
 
     /**
      * Ball parameters

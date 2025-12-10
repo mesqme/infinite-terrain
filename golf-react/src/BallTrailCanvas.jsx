@@ -4,9 +4,6 @@ import * as THREE from 'three'
 
 import useStore from './stores/useStore.jsx'
 
-const FADE_ALPHA = 0.01
-const MOVE_EPSILON = 0.001
-
 export default function BallTrailCanvas() {
     const setTrailTexture = useStore((state) => state.setTrailTexture)
     const trailParameters = useStore((state) => state.trailParameters)
@@ -18,8 +15,6 @@ export default function BallTrailCanvas() {
     const ctxRef = useRef(null)
     const currentPosRef = useRef(new THREE.Vector3())
     const movementDeltaRef = useRef(new THREE.Vector3())
-
-    // console.log('rerender BallTrailCanvas')
 
     useEffect(() => {
         const canvas = document.createElement('canvas')
@@ -60,7 +55,7 @@ export default function BallTrailCanvas() {
         }
     }, [setTrailTexture, trailParameters.canvasSize])
 
-    // Update canvas visibility when showCanvas changes
+    // Update canvas visibility
     useEffect(() => {
         if (canvasRef.current) {
             canvasRef.current.style.display = trailParameters.showCanvas
@@ -74,8 +69,7 @@ export default function BallTrailCanvas() {
         const ctx = ctxRef.current
         const glowImage = glowImageRef.current
         const texture = textureRef.current
-        if (!canvas || !ctx || !glowImage || !glowImage.complete || !texture)
-            return
+        if (!canvas || !ctx || !glowImage || !texture) return
 
         const ballPosition = useStore.getState().ballPosition
         const landBallDistance = useStore.getState().landBallDistance
@@ -104,7 +98,8 @@ export default function BallTrailCanvas() {
         const centerX = canvas.width * 0.5
         const centerY = canvas.height * 0.5
 
-        if (movementDistance > MOVE_EPSILON) {
+        if (movementDistance > 0.001) {
+            // Avoid drawing if movement is too small
             ctx.save()
             ctx.globalCompositeOperation = 'copy'
             ctx.drawImage(canvas, canvasDeltaX, canvasDeltaY)
@@ -112,24 +107,15 @@ export default function BallTrailCanvas() {
         }
 
         ctx.globalCompositeOperation = 'source-over'
-        ctx.globalAlpha = FADE_ALPHA
+        ctx.globalAlpha = trailParameters.fadeAlpha / 10.0
         ctx.fillStyle = 'black'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-        const baseAlpha = 0.3
-        const speedAlpha = Math.min(movementDistance * 0.05, 0.7)
-        let alpha = Math.min(baseAlpha + speedAlpha, 1)
+        let alpha = trailParameters.glowAlpha
 
-        const RAYCASTER_ORIGIN_Y_OFFSET = 0.35
-        const MAX_DISTANCE = 1.0
-
-        if (landBallDistance > RAYCASTER_ORIGIN_Y_OFFSET) {
-            // Interpolate from full strength at RAYCASTER_ORIGIN_Y_OFFSET to 0 at MAX_DISTANCE
-            const t = Math.min(
-                (landBallDistance - RAYCASTER_ORIGIN_Y_OFFSET) /
-                    (MAX_DISTANCE - RAYCASTER_ORIGIN_Y_OFFSET),
-                1.0
-            )
+        if (landBallDistance > 0.05) {
+            // maybe adjust it later with the ball size
+            const t = landBallDistance - 0.05
             alpha *= 1.0 - t
         }
 
