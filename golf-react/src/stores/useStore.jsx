@@ -2,9 +2,14 @@
 import { create } from 'zustand'
 import * as THREE from 'three'
 
-const TRAIL_CANVAS_SIZE = 256
-const TRAIL_PATCH_SIZE = 15
 const DEFAULT_CAMERA_LERP_SPEED = 5.0
+
+const DEFAULT_TRAIL_PARAMETERS = {
+    canvasSize: 256,
+    patchSize: 15,
+    glowSize: 0.12,
+    showCanvas: false, // Control visibility of the debug canvas on screen
+}
 
 const useStore = create((set) => ({
     ballPosition: new THREE.Vector3(0, 0, 0),
@@ -27,30 +32,62 @@ const useStore = create((set) => ({
         set({ trailTexture: texture })
     },
 
-    trailPatchSize: TRAIL_PATCH_SIZE,
-    trailTexelSize: 1.0 / TRAIL_CANVAS_SIZE,
-
-    // Noise parameters for irregular edge (shared between grass and ground)
-    noiseStrength: 0.75,
-    setNoiseStrength: (strength) => {
-        set({ noiseStrength: strength })
-    },
-
-    noiseScale: 3.5,
-    setNoiseScale: (scale) => {
-        set({ noiseScale: scale })
-    },
-
-    // Circle radius factor (multiplier for uTrailPatchSize to get the bounding circle radius)
-    circleRadiusFactor: 0.5,
-    setCircleRadiusFactor: (factor) => {
-        set({ circleRadiusFactor: factor })
-    },
-
     // Distance from ball to ground (from raycaster)
     landBallDistance: 1.0,
     setLandBallDistance: (distance) => {
         set({ landBallDistance: distance })
+    },
+
+    /**Border parameters */
+    borderParameters: {
+        noiseStrength: 0.75,
+        noiseScale: 3.5,
+        circleRadiusFactor: 0.5,
+    },
+    setBorderParameters: (parameters) => {
+        set({ borderParameters: parameters })
+    },
+
+    /**
+     * Grass parameters
+     */
+    grassParameters: {
+        colorBase: '#669019',
+        colorTop: '#acc125',
+        count: 1900,
+        segmentsCount: 4,
+        width: 0.15,
+        height: 1.15,
+        leanFactor: 0.2,
+        sobelMode: 1.0,
+        windScale: 0.35,
+        windStrength: 0.7,
+        windSpeed: 1.0,
+    },
+    setGrassParameters: (parameters) => {
+        set({ grassParameters: parameters })
+    },
+
+    /**
+     * Trail parameters
+     */
+    trailParameters: { ...DEFAULT_TRAIL_PARAMETERS },
+    setTrailParameters: (parameters) =>
+        set((state) => ({
+            trailParameters: {
+                ...state.trailParameters,
+                ...parameters,
+            },
+        })),
+
+    /**
+     * Ball parameters
+     */
+    ballParameters: {
+        color: '#c7442d',
+    },
+    setBallParameters: (parameters) => {
+        set({ ballParameters: parameters })
     },
 }))
 

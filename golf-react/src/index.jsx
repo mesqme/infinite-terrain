@@ -25,7 +25,7 @@ root.render(
                     fov: 45,
                     near: 0.1,
                     far: 200,
-                    position: [2.5, 4, 6],
+                    position: [12, 10, 0],
                 }}
             >
                 <Experience />
@@ -33,7 +33,7 @@ root.render(
         </KeyboardControls>
 
         {/* UI overlays */}
-        <FadingScreen />
-        <Loader />
+        {/* <FadingScreen /> */}
+        {/* <Loader /> */}
     </>
 )

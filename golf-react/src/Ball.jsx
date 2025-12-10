@@ -2,7 +2,6 @@ import { useRapier, RigidBody } from '@react-three/rapier'
 import { useFrame } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
 import { useState, useEffect, useRef } from 'react'
-import { useControls } from 'leva'
 import * as THREE from 'three'
 
 import useStore from './stores/useStore.jsx'
@@ -10,9 +9,7 @@ import useStore from './stores/useStore.jsx'
 const RAYCASTER_ORIGIN_Y_OFFSET = 0.35
 
 export default function Ball() {
-    const controls = useControls('Ball', {
-        color: '#c7442d', //#ab5757 //#5657aa //#9a4141 //#a73434 //#a64533 //#aa3232
-    })
+    const ballParameters = useStore((state) => state.ballParameters)
 
     const body = useRef()
     const [subscribeKeys, getKeys] = useKeyboardControls()
@@ -201,7 +198,10 @@ export default function Ball() {
         >
             <mesh castShadow>
                 <icosahedronGeometry args={[0.4, 1]} />
-                <meshStandardMaterial flatShading color={controls.color} />
+                <meshStandardMaterial
+                    flatShading
+                    color={ballParameters.color}
+                />
             </mesh>
         </RigidBody>
     )

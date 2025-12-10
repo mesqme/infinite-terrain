@@ -1,19 +1,15 @@
-// BallTrailCanvas.jsx
 import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+
 import useStore from './stores/useStore.jsx'
 
-const TRAIL_CANVAS_SIZE = 256
-const GLOW_SIZE = 0.12
 const FADE_ALPHA = 0.01
 const MOVE_EPSILON = 0.001
 
 export default function BallTrailCanvas() {
-    const ballPosition = useStore((state) => state.ballPosition)
     const setTrailTexture = useStore((state) => state.setTrailTexture)
-    const trailPatchSize = useStore((state) => state.trailPatchSize)
-    const landBallDistance = useStore((state) => state.landBallDistance)
+    const trailParameters = useStore((state) => state.trailParameters)
 
     const canvasRef = useRef(null)
     const textureRef = useRef(null)
@@ -23,16 +19,19 @@ export default function BallTrailCanvas() {
     const currentPosRef = useRef(new THREE.Vector3())
     const movementDeltaRef = useRef(new THREE.Vector3())
 
+    // console.log('rerender BallTrailCanvas')
+
     useEffect(() => {
         const canvas = document.createElement('canvas')
-        canvas.width = TRAIL_CANVAS_SIZE
-        canvas.height = TRAIL_CANVAS_SIZE
+        canvas.width = trailParameters.canvasSize
+        canvas.height = trailParameters.canvasSize
         canvas.style.position = 'fixed'
-        canvas.style.width = `${TRAIL_CANVAS_SIZE}px`
-        canvas.style.height = `${TRAIL_CANVAS_SIZE}px`
+        canvas.style.width = `${256}px`
+        canvas.style.height = `${256}px`
         canvas.style.left = '0'
         canvas.style.bottom = '0'
         canvas.style.zIndex = '10'
+        canvas.style.display = trailParameters.showCanvas ? 'block' : 'none'
         document.body.appendChild(canvas)
 
         ctxRef.current = canvas.getContext('2d')
@@ -59,15 +58,27 @@ export default function BallTrailCanvas() {
             texture.dispose()
             canvas.remove()
         }
-    }, [setTrailTexture])
+    }, [setTrailTexture, trailParameters.canvasSize])
 
-    useFrame(({ clock }) => {
-        const delta = clock.getDelta()
+    // Update canvas visibility when showCanvas changes
+    useEffect(() => {
+        if (canvasRef.current) {
+            canvasRef.current.style.display = trailParameters.showCanvas
+                ? 'block'
+                : 'none'
+        }
+    }, [trailParameters.showCanvas])
+
+    useFrame(() => {
         const canvas = canvasRef.current
         const ctx = ctxRef.current
         const glowImage = glowImageRef.current
         const texture = textureRef.current
-        if (!canvas || !glowImage || !glowImage.complete || !texture) return
+        if (!canvas || !ctx || !glowImage || !glowImage.complete || !texture)
+            return
+
+        const ballPosition = useStore.getState().ballPosition
+        const landBallDistance = useStore.getState().landBallDistance
 
         const currentPosition = currentPosRef.current.copy(ballPosition)
         currentPosition.y = 0
@@ -83,7 +94,7 @@ export default function BallTrailCanvas() {
             previousPosition
         )
 
-        const patchSize = trailPatchSize
+        const patchSize = trailParameters.patchSize
         const scale = canvas.width / patchSize
 
         const canvasDeltaX = -movementDelta.x * scale
@@ -101,8 +112,6 @@ export default function BallTrailCanvas() {
         }
 
         ctx.globalCompositeOperation = 'source-over'
-        // const effectiveFade = 1.0 - Math.pow(1.0 - FADE_ALPHA, delta * 2000.0)
-        // ctx.globalAlpha = effectiveFade
         ctx.globalAlpha = FADE_ALPHA
         ctx.fillStyle = 'black'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -111,9 +120,6 @@ export default function BallTrailCanvas() {
         const speedAlpha = Math.min(movementDistance * 0.05, 0.7)
         let alpha = Math.min(baseAlpha + speedAlpha, 1)
 
-        // Modulate alpha based on distance to ground
-        // RAYCASTER_ORIGIN_Y_OFFSET = 0.35 is where glow starts decreasing
-        // Distance >= 1.0 means glow is completely off
         const RAYCASTER_ORIGIN_Y_OFFSET = 0.35
         const MAX_DISTANCE = 1.0
 
@@ -124,10 +130,10 @@ export default function BallTrailCanvas() {
                     (MAX_DISTANCE - RAYCASTER_ORIGIN_Y_OFFSET),
                 1.0
             )
-            alpha *= 1.0 - t // Decrease alpha as distance increases
+            alpha *= 1.0 - t
         }
 
-        const glowSize = canvas.width * GLOW_SIZE
+        const glowSize = canvas.width * trailParameters.glowSize
 
         ctx.globalCompositeOperation = 'lighten'
         ctx.globalAlpha = alpha

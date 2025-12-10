@@ -1,47 +1,34 @@
-import { useMemo, useEffect } from 'react'
-import * as THREE from 'three'
+import { useMemo, useEffect, useRef } from 'react'
 import { useControls } from 'leva'
 import { RigidBody } from '@react-three/rapier'
 import { useFrame } from '@react-three/fiber'
+import * as THREE from 'three'
 
 import { Grass } from './Grass.jsx'
 import useStore from './stores/useStore.jsx'
 
-import terrainVertexShader from './shaders/ground/vertex.glsl'
-import terrainFragmentShader from './shaders/ground/fragment.glsl'
+import terrainVertexShader from './shaders/terrain/vertex.glsl'
+import terrainFragmentShader from './shaders/terrain/fragment.glsl'
 
-export default function TerrainChunk({ x, z, size, noise2D }) {
-    const controls = useControls('TerrainChunk', {
-        color: '#908343', //#8f844f //#8d7f3c //#908343
-        fadeColor: '#9a9065', //#4b483f //#5f8da0 //#9a9065 //#807750 //#9a8c4f
+export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
+    const controls = useControls('Terrain', {
+        color: '#908343',
+        fadeColor: '#9a9065',
     })
 
-    const smoothedCircleCenter = useStore((s) => s.smoothedCircleCenter) // smoothed center for circle effect
-    const trailPatchSize = useStore((s) => s.trailPatchSize)
-    const noiseStrength = useStore((s) => s.noiseStrength) // noise strength for irregular edge
-    const noiseScale = useStore((s) => s.noiseScale) // noise scale for irregular edge
-    const circleRadiusFactor = useStore((s) => s.circleRadiusFactor) // circle radius factor
+    const meshRef = useRef(null)
 
-    // noise texture for irregular edge (shared with grass)
-    const noiseTexture = useMemo(() => {
-        const loader = new THREE.TextureLoader()
-        const texture = loader.load('/textures/noiseTexture.png')
-        texture.wrapS = THREE.RepeatWrapping
-        texture.wrapT = THREE.RepeatWrapping
-        texture.minFilter = THREE.LinearFilter
-        texture.magFilter = THREE.LinearFilter
-        return texture
-    }, [])
+    const trailParameters = useStore((s) => s.trailParameters)
+    const borderParameters = useStore((s) => s.borderParameters)
 
+    // Geometry
     const geometry = useMemo(() => {
-        if (!noise2D) return null
-
         const segments = 32
-        const geo = new THREE.PlaneGeometry(size, size, segments, segments)
-
-        const posAttribute = geo.attributes.position
         const scale = 0.05
         const amplitude = 2
+
+        const geo = new THREE.PlaneGeometry(size, size, segments, segments)
+        const posAttribute = geo.attributes.position
 
         const chunkWorldX = x * size
         const chunkWorldZ = z * size
@@ -59,67 +46,42 @@ export default function TerrainChunk({ x, z, size, noise2D }) {
             posAttribute.setZ(i, heightVal)
         }
 
-        geo.computeVertexNormals()
         return geo
     }, [noise2D, size, x, z])
 
+    // Material
     const material = useMemo(() => {
         return new THREE.ShaderMaterial({
             uniforms: {
                 uBaseColor: { value: new THREE.Color(controls.color) },
                 uFadeColor: { value: new THREE.Color(controls.fadeColor) },
-                uCircleCenter: { value: new THREE.Vector3() }, // smoothed center for visual circle
-                uTrailPatchSize: { value: trailPatchSize },
-                // noise texture for irregular edge
+                uCircleCenter: { value: new THREE.Vector3() },
+                uTrailPatchSize: { value: trailParameters.patchSize },
                 uNoiseTexture: { value: noiseTexture },
-                uNoiseStrength: { value: noiseStrength },
-                uNoiseScale: { value: noiseScale },
-                // circle radius factor
-                uCircleRadiusFactor: { value: circleRadiusFactor },
+                uNoiseStrength: { value: borderParameters.noiseStrength },
+                uNoiseScale: { value: borderParameters.noiseScale },
+                uCircleRadiusFactor: {
+                    value: borderParameters.circleRadiusFactor,
+                },
             },
             vertexShader: terrainVertexShader,
             fragmentShader: terrainFragmentShader,
         })
-    }, [
-        controls.color,
-        controls.fadeColor,
-        trailPatchSize,
-        noiseTexture,
-        noiseStrength,
-        noiseScale,
-        circleRadiusFactor,
-    ])
+    }, [controls, trailParameters, noiseTexture, borderParameters])
 
-    // Keep uniforms in sync with Leva / store
-    useEffect(() => {
-        material.uniforms.uBaseColor.value.set(controls.color)
-        material.uniforms.uTrailPatchSize.value = trailPatchSize
-        material.uniforms.uNoiseStrength.value = noiseStrength
-        material.uniforms.uNoiseScale.value = noiseScale
-        material.uniforms.uCircleRadiusFactor.value = circleRadiusFactor
-    }, [
-        controls.color,
-        trailPatchSize,
-        noiseStrength,
-        noiseScale,
-        circleRadiusFactor,
-        material,
-    ])
-
-    // Per-frame: use smoothed circle center (lerps with camera)
     useFrame(() => {
-        material.uniforms.uCircleCenter.value.copy(smoothedCircleCenter)
+        const circleCenter = useStore.getState().smoothedCircleCenter
+        meshRef.current?.material.uniforms.uCircleCenter.value.copy(
+            circleCenter
+        )
     })
 
     useEffect(() => {
         return () => {
-            geometry?.dispose()
+            geometry.dispose()
             material.dispose()
-            noiseTexture.dispose()
         }
-    }, [geometry, material, noiseTexture])
-
-    if (!geometry) return null
+    }, [])
 
     return (
         <group position={[x * size, 0, z * size]}>
@@ -128,9 +90,12 @@ export default function TerrainChunk({ x, z, size, noise2D }) {
                 colliders="trimesh"
                 userData={{ name: 'terrain' }}
             >
-                <mesh geometry={geometry} rotation-x={-Math.PI / 2}>
-                    <primitive object={material} attach="material" />
-                </mesh>
+                <mesh
+                    ref={meshRef}
+                    geometry={geometry}
+                    material={material}
+                    rotation-x={-Math.PI / 2}
+                />
             </RigidBody>
 
             <Grass
@@ -138,6 +103,7 @@ export default function TerrainChunk({ x, z, size, noise2D }) {
                 chunkX={x * size}
                 chunkZ={z * size}
                 noise2D={noise2D}
+                noiseTexture={noiseTexture}
             />
         </group>
     )

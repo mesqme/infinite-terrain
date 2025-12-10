@@ -1,94 +1,24 @@
 import { useFrame, useThree } from '@react-three/fiber'
-import { useControls } from 'leva'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 
 import useStore from './stores/useStore.jsx'
+
 import grassFragmentShader from './shaders/grass/fragment.glsl'
 import grassVertexShader from './shaders/grass/vertex.glsl'
 
-const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
+const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture }) => {
     const grassRef = useRef(null)
 
-    // trail data from Zustand (shared with BallTrailCanvas)
-    const trailTexture = useStore((s) => s.trailTexture)
-    const ballPosition = useStore((s) => s.ballPosition) // actual ball position (for trail texture)
-    const smoothedCircleCenter = useStore((s) => s.smoothedCircleCenter) // smoothed center for circle effect
-    const trailPatchSize = useStore((s) => s.trailPatchSize) // world size mapped onto trail texture
-    const trailTexelSize = useStore((s) => s.trailTexelSize) // 1.0 / textureResolution
-    const noiseStrength = useStore((s) => s.noiseStrength) // noise strength for irregular edge
-    const noiseScale = useStore((s) => s.noiseScale) // noise scale for irregular edge
-    const circleRadiusFactor = useStore((s) => s.circleRadiusFactor) // circle radius factor
+    const trailParameters = useStore((s) => s.trailParameters)
+    const borderParameters = useStore((s) => s.borderParameters)
+    const grassParameters = useStore((s) => s.grassParameters)
 
-    // grass look / distribution
-    const controls = useControls('Grass', {
-        colorBase: '#669019', // #6b8f29 //#478f2a //#8a8f29 //#669019
-        colorTop: '#acc125', // #b6c54f //#7bd948 //#c4c14f //#acc125
-        count: { value: 1900, min: 0, max: 5000, step: 10 }, // 3000 //1500
-        segmentsCount: { value: 4, min: 1, max: 10, step: 1 }, //4 //5
-        width: { value: 0.15, min: 0, max: 0.4, step: 0.001 }, // 0.12 //0.15
-        height: { value: 1.15, min: 0, max: 3, step: 0.01 }, // 1.0 //1.3
-        leanFactor: { value: 0.2, min: 0, max: 1, step: 0.01 },
-        sobelMode: { value: 1.0, min: 0, max: 1, step: 1 },
-    })
-
-    // global wind for grass animation
-    const windControls = useControls('Wind', {
-        scale: { value: 0.35, min: -2, max: 2, step: 0.001 },
-        strength: { value: 0.7, min: -1.5, max: 1.5, step: 0.001 },
-        speed: { value: 1.0, min: 0, max: 2, step: 0.01 },
-    })
-
-    // noise texture for irregular edge
-    const noiseTexture = useMemo(() => {
-        const loader = new THREE.TextureLoader()
-        const texture = loader.load('/textures/noiseTexture.png')
-        texture.wrapS = THREE.RepeatWrapping
-        texture.wrapT = THREE.RepeatWrapping
-        texture.minFilter = THREE.LinearFilter
-        texture.magFilter = THREE.LinearFilter
-        return texture
-    }, [])
-
-    // noise edge controls (now in store, but keep Leva for UI)
-    const setNoiseStrength = useStore((s) => s.setNoiseStrength)
-    const setNoiseScale = useStore((s) => s.setNoiseScale)
-    const setCircleRadiusFactor = useStore((s) => s.setCircleRadiusFactor)
-    const noiseControls = useControls('Noise Edge', {
-        strength: {
-            value: noiseStrength,
-            min: 0,
-            max: 1,
-            step: 0.01,
-            onChange: (value) => setNoiseStrength(value),
-        },
-        scale: {
-            value: noiseScale,
-            min: 0.1,
-            max: 10,
-            step: 0.1,
-            onChange: (value) => setNoiseScale(value),
-        },
-    })
-
-    // circle radius control
-    const circleControls = useControls('Circle', {
-        radiusFactor: {
-            value: circleRadiusFactor,
-            min: 0.1,
-            max: 1.0,
-            step: 0.01,
-            onChange: (value) => setCircleRadiusFactor(value),
-        },
-    })
-
-    // instanced grass geometry: one blade mesh, many instance positions
     const grassGeometry = useMemo(() => {
-        const vertexNumber = (controls.segmentsCount + 1) * 2
+        const vertexNumber = (grassParameters.segmentsCount + 1) * 2
         const indices = []
 
-        // build index buffer for a double-sided strip of quads per blade
-        for (let i = 0; i < controls.segmentsCount; ++i) {
+        for (let i = 0; i < grassParameters.segmentsCount; ++i) {
             const vi = i * 2
             indices[i * 12] = vi
             indices[i * 12 + 1] = vi + 1
@@ -109,7 +39,7 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
         }
 
         const grassGeometry = new THREE.InstancedBufferGeometry()
-        grassGeometry.instanceCount = controls.count
+        grassGeometry.instanceCount = grassParameters.count
         grassGeometry.setIndex(indices)
         grassGeometry.boundingSphere = new THREE.Sphere(
             new THREE.Vector3(0, 0, 0),
@@ -117,11 +47,11 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
         )
 
         // distribute blades inside this chunk; Y from terrain noise
-        const positions = new Float32Array(controls.count * 3)
+        const positions = new Float32Array(grassParameters.count * 3)
         const scale = 0.05
         const amplitude = 2
 
-        for (let i = 0; i < controls.count; i++) {
+        for (let i = 0; i < grassParameters.count; i++) {
             const x = (Math.random() - 0.5) * size
             const z = (Math.random() - 0.5) * size
 
@@ -143,7 +73,14 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
         )
 
         return grassGeometry
-    }, [controls.segmentsCount, controls.count, size, chunkX, chunkZ, noise2D])
+    }, [
+        grassParameters.segmentsCount,
+        grassParameters.count,
+        size,
+        chunkX,
+        chunkZ,
+        noise2D,
+    ])
 
     // ShaderMaterial with custom grass + trail logic
     const grassMaterial = useMemo(
@@ -154,112 +91,79 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
                     uResolution: { value: new THREE.Vector2(1, 1) },
                     uGrassParameters: {
                         value: new THREE.Vector4(
-                            controls.segmentsCount, // segments
+                            grassParameters.segmentsCount, // segments
                             size / 2, // patch half-size for grass itself
-                            controls.width, // base width
-                            controls.height // base height
+                            grassParameters.width, // base width
+                            grassParameters.height // base height
                         ),
                     },
                     uGrassBaseColor: {
-                        value: new THREE.Color(controls.colorBase),
+                        value: new THREE.Color(grassParameters.colorBase),
                     },
                     uGrassTopColor: {
-                        value: new THREE.Color(controls.colorTop),
+                        value: new THREE.Color(grassParameters.colorTop),
                     },
-                    uLeanFactor: { value: controls.leanFactor },
+                    uLeanFactor: { value: grassParameters.leanFactor },
                     uPositionX: { value: chunkX },
                     uPositionZ: { value: chunkZ },
 
-                    uWindScale: { value: windControls.scale },
-                    uWindStrength: { value: windControls.strength },
-                    uWindSpeed: { value: windControls.speed },
+                    uWindScale: { value: grassParameters.windScale },
+                    uWindStrength: { value: grassParameters.windStrength },
+                    uWindSpeed: { value: grassParameters.windSpeed },
 
                     // trail uniforms
                     uTrailTexture: { value: null },
                     uBallPosition: { value: new THREE.Vector3() }, // actual ball position for trail texture
                     uCircleCenter: { value: new THREE.Vector3() }, // smoothed center for visual circle
-                    uTrailPatchSize: { value: trailPatchSize },
-                    uTrailTexelSize: { value: trailTexelSize },
-                    uSobelMode: { value: controls.sobelMode }, // 0.0 = 4-tap, 1.0 = 8-tap Sobel
+                    uTrailPatchSize: { value: trailParameters.patchSize },
+                    uTrailTexelSize: {
+                        value: 1.0 / trailParameters.canvasSize,
+                    },
+                    uSobelMode: { value: grassParameters.sobelMode }, // 0.0 = 4-tap, 1.0 = 8-tap Sobel
 
                     // noise texture for irregular edge
                     uNoiseTexture: { value: noiseTexture },
-                    uNoiseStrength: { value: noiseStrength },
-                    uNoiseScale: { value: noiseScale },
+                    uNoiseStrength: { value: borderParameters.noiseStrength },
+                    uNoiseScale: { value: borderParameters.noiseScale },
                     // circle radius factor
-                    uCircleRadiusFactor: { value: circleRadiusFactor },
+                    uCircleRadiusFactor: {
+                        value: borderParameters.circleRadiusFactor,
+                    },
                 },
                 vertexShader: grassVertexShader,
                 fragmentShader: grassFragmentShader,
                 side: THREE.FrontSide,
             }),
         [
-            controls,
-            windControls,
+            grassParameters,
             size,
             chunkX,
             chunkZ,
-            trailPatchSize,
-            trailTexelSize,
+            trailParameters,
             noiseTexture,
-            noiseStrength,
-            noiseScale,
-            circleRadiusFactor,
+            borderParameters,
         ]
     )
 
-    // push Leva + chunk props into uniforms (no shader recompiles on tweak)
-    useEffect(() => {
-        grassMaterial.uniforms.uGrassBaseColor.value = new THREE.Color(
-            controls.colorBase
-        )
-        grassMaterial.uniforms.uGrassTopColor.value = new THREE.Color(
-            controls.colorTop
-        )
-        grassMaterial.uniforms.uGrassParameters.value.x = controls.segmentsCount
-        grassMaterial.uniforms.uGrassParameters.value.y = size / 2
-        grassMaterial.uniforms.uGrassParameters.value.z = controls.width
-        grassMaterial.uniforms.uGrassParameters.value.w = controls.height
-        grassMaterial.uniforms.uLeanFactor.value = controls.leanFactor
-        grassMaterial.uniforms.uWindScale.value = windControls.scale
-        grassMaterial.uniforms.uWindStrength.value = windControls.strength
-        grassMaterial.uniforms.uWindSpeed.value = windControls.speed
-        grassMaterial.uniforms.uPositionX.value = chunkX
-        grassMaterial.uniforms.uPositionZ.value = chunkZ
-        grassMaterial.uniforms.uTrailPatchSize.value = trailPatchSize
-        grassMaterial.uniforms.uTrailTexelSize.value = trailTexelSize
-        grassMaterial.uniforms.uNoiseStrength.value = noiseStrength
-        grassMaterial.uniforms.uNoiseScale.value = noiseScale
-        grassMaterial.uniforms.uCircleRadiusFactor.value = circleRadiusFactor
-        // uSobelMode is set in useMemo, no need to update here
-    }, [
-        controls,
-        windControls,
-        grassMaterial,
-        size,
-        chunkX,
-        chunkZ,
-        trailPatchSize,
-        trailTexelSize,
-        noiseStrength,
-        noiseScale,
-        circleRadiusFactor,
-    ])
-
-    // attach trail texture once it's available
-    useEffect(() => {
-        if (trailTexture) {
-            grassMaterial.uniforms.uTrailTexture.value = trailTexture
-        }
-    }, [trailTexture, grassMaterial])
-
     // per-frame time and positions (for wind + trail mapping)
+    // Update uniforms from store without causing React rerenders
     useFrame(({ clock }) => {
+        const state = useStore.getState()
+
         grassMaterial.uniforms.uTime.value = clock.elapsedTime
+
+        // Update trail texture if it changed
+        if (state.trailTexture) {
+            grassMaterial.uniforms.uTrailTexture.value = state.trailTexture
+        }
+
         // Actual ball position for trail texture sampling
-        grassMaterial.uniforms.uBallPosition.value.copy(ballPosition)
+        grassMaterial.uniforms.uBallPosition.value.copy(state.ballPosition)
+
         // Smoothed circle center for visual circle effect (lerps with camera)
-        grassMaterial.uniforms.uCircleCenter.value.copy(smoothedCircleCenter)
+        grassMaterial.uniforms.uCircleCenter.value.copy(
+            state.smoothedCircleCenter
+        )
     })
 
     // clean up GPU resources on unmount
@@ -267,9 +171,8 @@ const Grass = ({ size = 10, chunkX = 0, chunkZ = 0, noise2D }) => {
         return () => {
             grassGeometry.dispose()
             grassMaterial.dispose()
-            noiseTexture.dispose()
         }
-    }, [grassGeometry, grassMaterial, noiseTexture])
+    }, [grassGeometry, grassMaterial])
 
     // we don't need scene here, but this keeps hook ordering consistent
     useThree((state) => state.scene)
