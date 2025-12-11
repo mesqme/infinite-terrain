@@ -1,5 +1,4 @@
 import { useMemo, useEffect, useRef } from 'react'
-import { useControls } from 'leva'
 import { RigidBody } from '@react-three/rapier'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -36,8 +35,7 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
             const worldX = px + chunkWorldX
             const worldZ = -py + chunkWorldZ
 
-            const heightVal =
-                noise2D(worldX * scale, worldZ * scale) * amplitude
+            const heightVal = noise2D(worldX * scale, worldZ * scale) * amplitude
 
             posAttribute.setZ(i, heightVal)
         }
@@ -67,11 +65,9 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
         })
     }, [terrainParameters, trailParameters, borderParameters, noiseTexture])
 
-    useFrame(() => {
+    useFrame((state) => {
         const circleCenter = useStore.getState().smoothedCircleCenter
-        meshRef.current?.material.uniforms.uCircleCenter.value.copy(
-            circleCenter
-        )
+        meshRef.current?.material.uniforms.uCircleCenter.value.copy(circleCenter)
     })
 
     useEffect(() => {
@@ -83,26 +79,11 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
 
     return (
         <group position={[x * size, 0, z * size]}>
-            <RigidBody
-                type="fixed"
-                colliders="trimesh"
-                userData={{ name: 'terrain' }}
-            >
-                <mesh
-                    ref={meshRef}
-                    geometry={geometry}
-                    material={material}
-                    rotation-x={-Math.PI / 2}
-                />
+            <RigidBody type="fixed" colliders="trimesh" userData={{ name: 'terrain' }}>
+                <mesh ref={meshRef} geometry={geometry} material={material} rotation-x={-Math.PI / 2} />
             </RigidBody>
 
-            <Grass
-                size={size}
-                chunkX={x * size}
-                chunkZ={z * size}
-                noise2D={noise2D}
-                noiseTexture={noiseTexture}
-            />
+            <Grass size={size} chunkX={x * size} chunkZ={z * size} noise2D={noise2D} noiseTexture={noiseTexture} />
         </group>
     )
 }

@@ -58,9 +58,7 @@ export default function BallTrailCanvas() {
     // Update canvas visibility
     useEffect(() => {
         if (canvasRef.current) {
-            canvasRef.current.style.display = trailParameters.showCanvas
-                ? 'block'
-                : 'none'
+            canvasRef.current.style.display = trailParameters.showCanvas ? 'block' : 'none'
         }
     }, [trailParameters.showCanvas])
 
@@ -83,10 +81,7 @@ export default function BallTrailCanvas() {
             previousPositionRef.current = previousPosition
         }
 
-        const movementDelta = movementDeltaRef.current.subVectors(
-            currentPosition,
-            previousPosition
-        )
+        const movementDelta = movementDeltaRef.current.subVectors(currentPosition, previousPosition)
 
         const patchSize = trailParameters.patchSize
         const scale = canvas.width / patchSize
@@ -123,13 +118,7 @@ export default function BallTrailCanvas() {
 
         ctx.globalCompositeOperation = 'lighten'
         ctx.globalAlpha = alpha
-        ctx.drawImage(
-            glowImage,
-            centerX - glowSize * 0.5,
-            centerY - glowSize * 0.5,
-            glowSize,
-            glowSize
-        )
+        ctx.drawImage(glowImage, centerX - glowSize * 0.5, centerY - glowSize * 0.5, glowSize, glowSize)
 
         ctx.globalCompositeOperation = 'destination-over'
         ctx.globalAlpha = 1

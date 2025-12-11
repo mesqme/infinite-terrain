@@ -1,7 +1,14 @@
+@font-face {
+    font-family: 'Bebas Neue';
+    src: url('/bebas-neue-v9-latin-regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 html,
 body,
-#root
-{
+#root {
     position: fixed;
     top: 0;
     left: 0;
@@ -13,8 +20,7 @@ body,
 /**
  * Interface
  */
-.interface
-{
+.interface {
     position: fixed;
     top: 0;
     left: 0;
@@ -27,8 +33,7 @@ body,
 /**
  * Time
  */
-.time
-{
+.time {
     position: absolute;
     top: 15%;
     left: 0;
@@ -43,8 +48,7 @@ body,
 /**
  * Restart
  */
-.restart
-{
+.restart {
     display: flex;
     justify-content: center;
     position: absolute;
@@ -62,22 +66,19 @@ body,
 /**
  * Controls
  */
-.controls
-{
+.controls {
     position: absolute;
     bottom: 10%;
     left: 0;
     width: 100%;
 }
 
-.controls .raw
-{
+.controls .raw {
     display: flex;
     justify-content: center;
 }
 
-.controls .key
-{
+.controls .key {
     width: 40px;
     height: 40px;
     margin: 4px;
@@ -85,12 +86,10 @@ body,
     background: #ffffff44;
 }
 
-.controls .key.large
-{
+.controls .key.large {
     width: 144px;
 }
 
-.controls .key.active
-{
+.controls .key.active {
     background: #ffffff99;
 }

@@ -1,38 +1,22 @@
-// useStore.jsx
 import { create } from 'zustand'
 import * as THREE from 'three'
 
-const DEFAULT_CAMERA_LERP_SPEED = 5.0
-
-const DEFAULT_TRAIL_PARAMETERS = {
-    canvasSize: 256,
-    patchSize: 15,
-    glowSize: 0.12,
-    showCanvas: false, // Control visibility of the debug canvas on screen
-}
-
 const useStore = create((set) => ({
-    ballPosition: new THREE.Vector3(0, 0, 0),
-    updateBallPosition: (position) => {
-        set({ ballPosition: position.clone() })
-    },
-
-    smoothedCircleCenter: new THREE.Vector3(0, 0, 0),
-    updateSmoothedCircleCenter: (position) => {
-        set({ smoothedCircleCenter: position.clone() })
-    },
-
-    cameraLerpSpeed: DEFAULT_CAMERA_LERP_SPEED,
-    setCameraLerpSpeed: (speed) => {
-        set({ cameraLerpSpeed: speed })
-    },
-
     trailTexture: null,
     setTrailTexture: (texture) => {
         set({ trailTexture: texture })
     },
 
-    // Distance from ball to ground (from raycaster)
+    ballPosition: new THREE.Vector3(0, 0, 0),
+    setBallPosition: (position) => {
+        set({ ballPosition: position })
+    },
+
+    smoothedCircleCenter: new THREE.Vector3(0, 0, 0),
+    setSmoothedCircleCenter: (position) => {
+        set({ smoothedCircleCenter: position })
+    },
+
     landBallDistance: 1.0,
     setLandBallDistance: (distance) => {
         set({ landBallDistance: distance })
@@ -91,7 +75,7 @@ const useStore = create((set) => ({
         glowSize: 0.12,
         fadeAlpha: 0.1,
         glowAlpha: 0.4,
-        showCanvas: true,
+        showCanvas: false,
     },
     setTrailParameters: (parameters) => {
         set({ trailParameters: parameters })

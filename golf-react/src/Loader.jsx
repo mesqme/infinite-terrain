@@ -4,46 +4,78 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import usePhases, { PHASES } from './stores/usePhases'
 import useActions from './stores/useActions'
 
+const BG_COLOR = '#9a9065'
+const RING_COLOR = '#ffffff'
+const RING_TRACK_COLOR = 'rgba(0, 0, 0, 0.1)'
+const RING_SIZE = 200
+const RING_THICKNESS = 12
+
 const LOADER_STYLE = {
     wrapper: {
         position: 'fixed',
         inset: 0,
-        background: '#000',
-        color: '#fff',
+        background: BG_COLOR,
         zIndex: 10000,
         display: 'grid',
         placeItems: 'center',
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Bebas Neue', sans-serif",
     },
-    panel: {
-        width: 'min(520px, 90vw)',
-        textAlign: 'center',
+    container: {
+        position: 'relative',
+        display: 'grid',
+        placeItems: 'center',
     },
-    barFrame: {
-        border: '2px solid rgba(255,255,255,0.9)',
-        padding: '6px',
-        marginTop: '12px',
+    ring: (percent) => {
+        const deg = percent * 3.6 // Convert percentage to degrees (100% = 360deg)
+        return {
+            width: RING_SIZE,
+            height: RING_SIZE,
+            borderRadius: '50%',
+            background: `conic-gradient(from -90deg, ${RING_COLOR} ${deg}deg, ${RING_TRACK_COLOR} ${deg}deg)`,
+            padding: RING_THICKNESS,
+            boxSizing: 'border-box',
+            transition: 'background 0.2s ease',
+        }
     },
-    bar: {
-        height: '18px',
-        background: 'rgba(255,255,255,0.18)',
-    },
-    fill: (percent) => ({
+    ringInner: {
+        width: '100%',
         height: '100%',
-        width: `${percent}%`,
-        background: '#fff',
-        transition: 'width 0.2s ease',
-    }),
-    startButton: {
-        padding: '10px 22px',
-        fontSize: '22px',
-        letterSpacing: '0.06em',
-        color: '#fff',
-        background: 'transparent',
-        border: '2px solid #fff',
-        cursor: 'pointer',
-        marginTop: '10px',
+        borderRadius: '50%',
+        background: BG_COLOR,
     },
+    center: (isHovered, showStart) => ({
+        position: 'absolute',
+        display: 'grid',
+        placeItems: 'center',
+        width: RING_SIZE,
+        height: RING_SIZE,
+        borderRadius: '50%',
+        backgroundColor: isHovered ? '#ffffff' : 'transparent',
+        transition: 'background-color 0.2s ease',
+        cursor: showStart ? 'pointer' : 'default',
+    }),
+    percent: (isHovered) => ({
+        fontSize: '48px',
+        color: isHovered ? BG_COLOR : RING_COLOR,
+        fontFamily: "'Bebas Neue', sans-serif",
+        fontWeight: 100,
+        letterSpacing: '0.1em',
+        fontStretch: 'condensed',
+        transition: 'color 0.2s ease',
+    }),
+    goButton: (isHovered) => ({
+        fontSize: '52px',
+        letterSpacing: '0.15em',
+        color: isHovered ? BG_COLOR : RING_COLOR,
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        padding: '8px 16px',
+        fontFamily: "'Bebas Neue', sans-serif",
+        fontWeight: 100,
+        fontStretch: 'condensed',
+        transition: 'color 0.2s ease',
+    }),
 }
 
 export default function Loader() {
@@ -56,6 +88,7 @@ export default function Loader() {
 
     const lastPctRef = useRef(0)
     const [displayed, setDisplayed] = useState(0)
+    const [isHovered, setIsHovered] = useState(false)
 
     // target progress (ensures >= actual, capped 100)
     const target = useMemo(() => {
@@ -104,39 +137,18 @@ export default function Loader() {
 
     return (
         <div style={LOADER_STYLE.wrapper}>
-            <div style={LOADER_STYLE.panel}>
-                {showLoading && (
-                    <>
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'baseline',
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontSize: 28,
-                                    letterSpacing: '0.04em',
-                                }}
-                            >
-                                LOADING
-                            </div>
-                            <div style={{ fontSize: 28 }}>{percent}%</div>
-                        </div>
-                        <div style={LOADER_STYLE.barFrame}>
-                            <div style={LOADER_STYLE.bar}>
-                                <div style={LOADER_STYLE.fill(percent)} />
-                            </div>
-                        </div>
-                    </>
-                )}
-
-                {showStart && (
-                    <button style={LOADER_STYLE.startButton} onClick={onStart}>
-                        START
-                    </button>
-                )}
+            <div style={LOADER_STYLE.container}>
+                <div style={LOADER_STYLE.ring(percent)}>
+                    <div style={LOADER_STYLE.ringInner} />
+                </div>
+                <div style={LOADER_STYLE.center(isHovered, showStart)} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+                    {showLoading && <div style={LOADER_STYLE.percent(isHovered)}>{percent}%</div>}
+                    {showStart && (
+                        <button style={LOADER_STYLE.goButton(isHovered)} onClick={onStart}>
+                            GO
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     )

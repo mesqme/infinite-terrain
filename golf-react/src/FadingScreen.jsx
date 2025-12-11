@@ -3,13 +3,12 @@ import { useEffect, useRef, useState } from 'react'
 import useActions, { OVERLAY_STATE } from './stores/useActions'
 
 const FADE_DURATION_SEC = 0.6
+const BG_COLOR = '#9a9065'
 
 // Simple full-screen black overlay that fades in/out based on overlayState
 export default function FadingScreen() {
     const overlayState = useActions((s) => s.overlayState)
-    const [opacity, setOpacity] = useState(
-        overlayState === OVERLAY_STATE.opaque ? 1 : 0
-    )
+    const [opacity, setOpacity] = useState(overlayState === OVERLAY_STATE.opaque ? 1 : 0)
     const opacityRef = useRef(opacity)
 
     useEffect(() => {
@@ -44,7 +43,7 @@ export default function FadingScreen() {
             style={{
                 position: 'fixed',
                 inset: 0,
-                background: '#000',
+                background: BG_COLOR,
                 opacity,
                 pointerEvents,
                 zIndex: 9999,

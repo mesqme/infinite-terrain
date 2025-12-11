@@ -1,7 +1,7 @@
 import { useRapier, RigidBody } from '@react-three/rapier'
 import { useFrame } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import * as THREE from 'three'
 
 import useStore from './stores/useStore.jsx'
@@ -9,57 +9,72 @@ import useStore from './stores/useStore.jsx'
 const BALL_RADIUS = 0.4
 const GROUND_GAP = 0.05 // remember to keep it below the time of impact threshold
 const TIME_OF_IMPACT_THRESHOLD = 0.15
+const CAMERA_POSITION_OFFSET = new THREE.Vector3(0, 10, 12)
+const CAMERA_TARGET_OFFSET = new THREE.Vector3(0, 0.25, 0)
+const CAMERA_LERP_SPEED = 5.0
+const BALL_INITIAL_POSITION = new THREE.Vector3(0, 4, 0)
+const BALL_RESET_Y = -4.0
+const PHYSICS_PARANS = { jumpForce: 2.0, impulseStrength: 1.8, torqueStrength: 0.5 }
 
 export default function Ball() {
     const ballParameters = useStore((state) => state.ballParameters)
+    const setBallPosition = useStore((state) => state.setBallPosition)
+    const setLandBallDistance = useStore((state) => state.setLandBallDistance)
+    const setSmoothedCircleCenter = useStore((state) => state.setSmoothedCircleCenter)
 
-    const body = useRef()
+    const [smoothedCameraPosition] = useState(() => new THREE.Vector3(0, 14, 12))
+    const [smoothedCameraTarget] = useState(() => new THREE.Vector3(0, 0.25, 0))
+    const [smoothedCircleCenter] = useState(() => new THREE.Vector3(0, 0, 0))
+
     const [subscribeKeys, getKeys] = useKeyboardControls()
     const { rapier, world } = useRapier()
-    const [smoothedCameraPosition] = useState(
-        () => new THREE.Vector3(10, 10, 10)
-    )
-    const [smoothedCameraTarget] = useState(() => new THREE.Vector3())
-    const [smoothedCircleCenter] = useState(() => new THREE.Vector3(0, 0, 0))
-    const updateBallPosition = useStore((state) => state.updateBallPosition)
-    const updateSmoothedCircleCenter = useStore(
-        (state) => state.updateSmoothedCircleCenter
-    )
-    const cameraLerpSpeed = useStore((state) => state.cameraLerpSpeed)
-    const setLandBallDistance = useStore((state) => state.setLandBallDistance)
 
-    const jump = () => {
-        if (!body.current) return
+    const bodyRef = useRef()
+    const downRayRef = useRef()
 
-        // Start the ray slightly inside the ball and ignore the ball collider itself
-        const origin = body.current.translation()
-        origin.y -= BALL_RADIUS - GROUND_GAP
-        const direction = { x: 0, y: -1, z: 0 }
-        const ray = new rapier.Ray(origin, direction)
+    // Geometry
+    const geometry = useMemo(() => {
+        return new THREE.IcosahedronGeometry(BALL_RADIUS, 1)
+    }, [])
 
-        const hit = world.castRay(
-            ray,
-            10,
-            false,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            (collider) => {
-                // Exclude the ball rigid body from ray detection
-                return collider.parent()?.userData?.name !== 'ball'
-            }
-        )
+    // Material
+    const material = useMemo(() => {
+        return new THREE.MeshStandardMaterial({
+            color: new THREE.Color(ballParameters.color),
+            flatShading: true,
+        })
+    }, [ballParameters])
 
-        if (hit && hit.timeOfImpact < TIME_OF_IMPACT_THRESHOLD) {
-            body.current.applyImpulse({ x: 0, y: 2.0, z: 0 })
-        }
+    const castDownRay = () => {
+        downRayRef.current = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 })
+
+        const ray = downRayRef.current
+        const origin = ray.origin
+        const bodyPosition = bodyRef.current.translation()
+
+        origin.x = bodyPosition.x
+        origin.y = bodyPosition.y - (BALL_RADIUS - GROUND_GAP)
+        origin.z = bodyPosition.z
+
+        const hit = world.castRay(ray, 10, false, undefined, undefined, undefined, undefined, (collider) => {
+            const selfHandle = bodyRef.current.handle
+            return collider.handle !== selfHandle
+        })
+
+        return hit
     }
 
     const resetPosition = () => {
-        body.current.setTranslation({ x: 0, y: 4, z: 0 }, true)
-        body.current.setLinvel({ x: 0, y: 0, z: 0 }, true)
-        body.current.setAngvel({ x: 0, y: 0, z: 0 }, true)
+        bodyRef.current.setTranslation(BALL_INITIAL_POSITION, true)
+        bodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true)
+        bodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true)
+    }
+
+    const jump = () => {
+        const hit = castDownRay()
+        if (hit && hit.timeOfImpact < TIME_OF_IMPACT_THRESHOLD) {
+            bodyRef.current.applyImpulse({ x: 0, y: PHYSICS_PARANS.jumpForce, z: 0 })
+        }
     }
 
     useEffect(() => {
@@ -76,16 +91,14 @@ export default function Ball() {
     }, [])
 
     useFrame((state, delta) => {
-        /**
-         * Controls
-         */
+        // Controls
         const { forward, backward, leftward, rightward } = getKeys()
 
         const impulse = { x: 0, y: 0, z: 0 }
         const torque = { x: 0, y: 0, z: 0 }
 
-        const impulseStrength = 1.8 * delta
-        const torqueStrength = 0.5 * delta
+        const impulseStrength = PHYSICS_PARANS.impulseStrength * delta
+        const torqueStrength = PHYSICS_PARANS.torqueStrength * delta
 
         if (forward) {
             impulse.z -= impulseStrength
@@ -107,88 +120,46 @@ export default function Ball() {
             torque.z += torqueStrength
         }
 
-        body.current.applyImpulse(impulse)
-        body.current.applyTorqueImpulse(torque)
+        bodyRef.current.applyImpulse(impulse)
+        bodyRef.current.applyTorqueImpulse(torque)
 
-        /**
-         * Raycast to ground to get distance
-         */
-        const bodyPosition = body.current.translation()
-        const origin = {
-            x: bodyPosition.x,
-            y: bodyPosition.y,
-            z: bodyPosition.z,
-        }
-        origin.y -= BALL_RADIUS - GROUND_GAP
-        const direction = { x: 0, y: -1, z: 0 }
-        const ray = new rapier.Ray(origin, direction)
+        const bodyPosition = bodyRef.current.translation()
+        setBallPosition(bodyPosition)
 
-        const hit = world.castRay(
-            ray,
-            10,
-            false,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            (collider) => {
-                // Exclude the ball rigid body from ray detection
-                return collider.parent()?.userData?.name !== 'ball'
-            }
-        )
-
-        // Update land distance in store
-        if (hit) {
-            setLandBallDistance(hit.timeOfImpact)
-        } else {
-            // If no hit, set to a large distance (glow will be off)
-            setLandBallDistance(10.0)
-        }
-
-        /**
-         * Camera
-         */
-
-        // Update ball position in store
-        updateBallPosition(
-            new THREE.Vector3(bodyPosition.x, bodyPosition.y, bodyPosition.z)
-        )
-
-        // If the ball falls below -4 on Y, reset it to the initial height (y = 2)
-        if (bodyPosition.y < -4) {
+        // Reset position if the ball falls below -4 on Y
+        if (bodyPosition.y < BALL_RESET_Y) {
             resetPosition()
         }
 
+        // Raycasting
+        const hit = castDownRay()
+        setLandBallDistance(hit ? hit.timeOfImpact : 10.0) // handle no hit situation
+
+        // Smooth camera and circle center
         const cameraPosition = new THREE.Vector3()
         cameraPosition.copy(bodyPosition)
-        // cameraPosition.z += 20.25
-        // cameraPosition.y += 15.65
-        cameraPosition.z += 12.0
-        cameraPosition.y += 10.0
-        // cameraPosition.z += 3.0
-        // cameraPosition.y += 3.0
+        cameraPosition.add(CAMERA_POSITION_OFFSET)
 
         const cameraTarget = new THREE.Vector3()
         cameraTarget.copy(bodyPosition)
-        cameraTarget.y += 0.25
+        cameraTarget.add(CAMERA_TARGET_OFFSET)
 
-        // Lerp camera and circle center with the same speed
-        const lerpFactor = cameraLerpSpeed * delta
+        const circleCenter = new THREE.Vector3()
+        circleCenter.copy(bodyPosition)
+
+        const lerpFactor = CAMERA_LERP_SPEED * delta
         smoothedCameraPosition.lerp(cameraPosition, lerpFactor)
         smoothedCameraTarget.lerp(cameraTarget, lerpFactor)
-
-        // Smooth the circle center toward ball position (same lerp as camera)
-        smoothedCircleCenter.lerp(bodyPosition, lerpFactor)
-        updateSmoothedCircleCenter(smoothedCircleCenter)
+        smoothedCircleCenter.lerp(circleCenter, lerpFactor)
 
         state.camera.position.copy(smoothedCameraPosition)
         state.camera.lookAt(smoothedCameraTarget)
+        setSmoothedCircleCenter(smoothedCircleCenter)
     })
 
     return (
         <RigidBody
-            ref={body}
-            name="ball"
+            ref={bodyRef}
             canSleep={false}
             colliders="ball"
             restitution={0.2}
@@ -198,13 +169,7 @@ export default function Ball() {
             position={[0, 2, 0]}
             userData={{ name: 'ball' }}
         >
-            <mesh castShadow>
-                <icosahedronGeometry args={[BALL_RADIUS, 1]} />
-                <meshStandardMaterial
-                    flatShading
-                    color={ballParameters.color}
-                />
-            </mesh>
+            <mesh geometry={geometry} material={material} />
         </RigidBody>
     )
 }
