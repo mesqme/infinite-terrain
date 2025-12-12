@@ -1,11 +1,11 @@
 import './style.css'
 import ReactDOM from 'react-dom/client'
 import { Canvas } from '@react-three/fiber'
-import Experience from './Experience.jsx'
+import Experience from './world/Experience.jsx'
 import { KeyboardControls } from '@react-three/drei'
 import { Leva } from 'leva'
-import Loader from './Loader.jsx'
-import FadingScreen from './FadingScreen.jsx'
+import { ACESFilmicToneMapping, SRGBColorSpace } from 'three'
+import Loader from './loader/Loader.jsx'
 
 const root = ReactDOM.createRoot(document.querySelector('#root'))
 
@@ -33,9 +33,6 @@ root.render(
             </Canvas>
             <Leva collapsed />
         </KeyboardControls>
-
-        {/* UI overlays */}
-        <FadingScreen />
         <Loader />
     </>
 )

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-import useStore from './stores/useStore.jsx'
+import useStore from '../stores/useStore.jsx'
 
 export default function BallTrailCanvas() {
     const setTrailTexture = useStore((state) => state.setTrailTexture)

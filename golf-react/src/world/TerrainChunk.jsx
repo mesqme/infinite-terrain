@@ -4,10 +4,10 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 import { Grass } from './Grass.jsx'
-import useStore from './stores/useStore.jsx'
+import useStore from '../stores/useStore.jsx'
 
-import terrainVertexShader from './shaders/terrain/vertex.glsl'
-import terrainFragmentShader from './shaders/terrain/fragment.glsl'
+import terrainVertexShader from '../shaders/terrain/vertex.glsl'
+import terrainFragmentShader from '../shaders/terrain/fragment.glsl'
 
 export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
     const terrainParameters = useStore((s) => s.terrainParameters)
@@ -65,7 +65,7 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
         })
     }, [terrainParameters, trailParameters, borderParameters, noiseTexture])
 
-    useFrame((state) => {
+    useFrame(() => {
         const circleCenter = useStore.getState().smoothedCircleCenter
         meshRef.current?.material.uniforms.uCircleCenter.value.copy(circleCenter)
     })

@@ -4,7 +4,7 @@ import { useKeyboardControls } from '@react-three/drei'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import * as THREE from 'three'
 
-import useStore from './stores/useStore.jsx'
+import useStore from '../stores/useStore.jsx'
 
 const BALL_RADIUS = 0.4
 const GROUND_GAP = 0.05 // remember to keep it below the time of impact threshold

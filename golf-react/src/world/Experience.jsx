@@ -4,9 +4,9 @@ import { Perf } from 'r3f-perf'
 import Lights from './Lights.jsx'
 import Ball from './Ball.jsx'
 import Terrain from './Terrain.jsx'
-import PostFX from './PostFX.jsx'
 import BallTrailCanvas from './BallTrailCanvas.jsx'
 import Controls from './Controls.jsx'
+import BackgroundSphere from './BackgroundSphere.jsx'
 
 export default function Experience() {
     return (
@@ -22,8 +22,8 @@ export default function Experience() {
             </Physics>
 
             <BallTrailCanvas />
-            <PostFX />
             <Controls />
+            <BackgroundSphere />
         </>
     )
 }

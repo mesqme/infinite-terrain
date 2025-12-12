@@ -1,5 +1,5 @@
 import { useControls } from 'leva'
-import useStore from './stores/useStore.jsx'
+import useStore from '../stores/useStore.jsx'
 
 export default function Controls() {
     /**

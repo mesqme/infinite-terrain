@@ -5,7 +5,7 @@ import { createNoise2D } from 'simplex-noise'
 import * as THREE from 'three'
 
 import TerrainChunk from './TerrainChunk.jsx'
-import useStore from './stores/useStore.jsx'
+import useStore from '../stores/useStore.jsx'
 
 import noiseTextureURL from '/textures/noiseTexture.png'
 
@@ -37,11 +37,7 @@ export default function Terrain() {
         const chunkX = Math.round(ballPosition.x / CHUNK_SIZE)
         const chunkZ = Math.round(ballPosition.z / CHUNK_SIZE)
 
-        if (
-            chunkX !== currentChunk.current.x ||
-            chunkZ !== currentChunk.current.z ||
-            activeChunks.length === 0
-        ) {
+        if (chunkX !== currentChunk.current.x || chunkZ !== currentChunk.current.z || activeChunks.length === 0) {
             currentChunk.current = { x: chunkX, z: chunkZ }
 
             const newChunks = []
@@ -61,14 +57,7 @@ export default function Terrain() {
     return (
         <group>
             {activeChunks.map((chunk) => (
-                <TerrainChunk
-                    key={chunk.key}
-                    x={chunk.x}
-                    z={chunk.z}
-                    size={CHUNK_SIZE}
-                    noise2D={noise2D}
-                    noiseTexture={noiseTexture}
-                />
+                <TerrainChunk key={chunk.key} x={chunk.x} z={chunk.z} size={CHUNK_SIZE} noise2D={noise2D} noiseTexture={noiseTexture} />
             ))}
         </group>
     )
