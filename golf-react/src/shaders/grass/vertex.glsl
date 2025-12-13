@@ -1,4 +1,7 @@
-uniform vec4 uGrassParameters;   // x: segments, y: patchSizeHalf, z: width, w: height
+uniform float uGrassSegments;
+uniform float uGrassChunkSize;
+uniform float uGrassWidth;
+uniform float uGrassHeight;
 uniform vec3 uGrassBaseColor;
 uniform vec3 uGrassTopColor;
 uniform float uTime;
@@ -15,15 +18,14 @@ uniform float uPositionZ;
 uniform sampler2D uTrailTexture;
 uniform vec3 uBallPosition;      // actual ball position for trail texture sampling
 uniform vec3 uCircleCenter;      // smoothed center for visual circle effect (lerps with camera)
-uniform float uTrailPatchSize;   // world size mapped to texture (matches CHUNK_SIZE)
-uniform float uTrailTexelSize;   // 1.0 / textureResolution
+uniform float uTrailCanvasSize;  // texture resolution (e.g. 256)
 uniform float uSobelMode;        // 0.0 = 4-tap, 1.0 = 8-tap Sobel
 
 // noise texture for irregular edge
 uniform sampler2D uNoiseTexture;
 uniform float uNoiseStrength;    // how much noise affects the edge (0-1)
 uniform float uNoiseScale;       // scale of noise sampling
-uniform float uCircleRadiusFactor; // multiplier for uTrailPatchSize to get circle radius
+uniform float uCircleRadiusFactor; // multiplier for chunk size to get outer radius
 uniform float uGrassFadeOffset;
 uniform float uGroundOffset;
 uniform float uGroundFadeOffset;
@@ -39,11 +41,11 @@ varying float vTrailValue;       // trail intensity used in fragment for color t
 #include includes.glsl
 
 void main() {
-  int GRASS_SEGMENTS = int(uGrassParameters.x);
+  int GRASS_SEGMENTS = int(uGrassSegments);
   int GRASS_VERTICES = (GRASS_SEGMENTS + 1) * 2;
-  float GRASS_PATCH_SIZE = uGrassParameters.y;
-  float GRASS_WIDTH = uGrassParameters.z;
-  float GRASS_HEIGHT = uGrassParameters.w;
+  float GRASS_PATCH_SIZE = uGrassChunkSize * 0.5;
+  float GRASS_WIDTH = uGrassWidth;
+  float GRASS_HEIGHT = uGrassHeight;
 
   // base blade anchor in world space
   vec3 grassOffset = aInstancePosition;
@@ -57,7 +59,7 @@ void main() {
   // ---------------------------------------------------------------------------
   vec2 worldXZ = grassBladeWorldPos.xz;
   vec2 ballXZ  = uBallPosition.xz;  // actual ball position for trail texture
-  float patchSize = uTrailPatchSize; // world dimension that maps to full texture
+  float patchSize = uGrassChunkSize; // world dimension that maps to full texture
 
   vec2 deltaXZ = worldXZ - ballXZ;
   
@@ -71,10 +73,10 @@ void main() {
   float distToCircle = length(deltaXZCircle);
   
   // Circle radius chain: full grass → grass fade → ground offset → ground fade → outer
-  float outerRadius = uTrailPatchSize * uCircleRadiusFactor;
-  float grassFadeWidth = uTrailPatchSize * uGrassFadeOffset;
-  float groundOffsetWidth = uTrailPatchSize * uGroundOffset;
-  float groundFadeWidth = uTrailPatchSize * uGroundFadeOffset;
+  float outerRadius = uGrassChunkSize * uCircleRadiusFactor;
+  float grassFadeWidth = uGrassChunkSize * uGrassFadeOffset;
+  float groundOffsetWidth = uGrassChunkSize * uGroundOffset;
+  float groundFadeWidth = uGrassChunkSize * uGroundFadeOffset;
 
   // `grassRadius` is where grass reaches 0.0; it must sit inside the outer radius,
   // after reserving the ground offset + ground fade.
@@ -106,7 +108,7 @@ void main() {
   float trailValue = texture2D(uTrailTexture, trailUv).r;
 
   // Extra clamp very close to the ball, modulated by trail texture (goes black when ball is airborne)
-  float nearBallRadius = uTrailPatchSize * 0.1;
+  float nearBallRadius = uGrassChunkSize * 0.1;
   float nearBallFade = 1.0 - smoothstep(0.0, nearBallRadius, distToBall); // 1 at center → 0 at radius
   float nearBallMinHeight = 0.4; // minimum proportion when touching the ball
   // If trailValue is black (ball jumping), the clamp is suppressed; brightest keeps the clamp
@@ -128,7 +130,7 @@ void main() {
 
   // only compute gradient when trail is present and within radius
   if (trailValue > 0.05 && radiusFade > 0.0) {
-    float texel = uTrailTexelSize;
+    float texel = 1.0 / max(uTrailCanvasSize, 1.0);
     vec2 grad = vec2(0.0);
 
     if (uSobelMode < 0.5) {

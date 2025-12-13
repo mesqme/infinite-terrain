@@ -18,8 +18,8 @@ export default function BallTrailCanvas() {
 
     useEffect(() => {
         const canvas = document.createElement('canvas')
-        canvas.width = trailParameters.canvasSize
-        canvas.height = trailParameters.canvasSize
+        canvas.width = trailParameters.chunkSize
+        canvas.height = trailParameters.chunkSize
         canvas.style.position = 'fixed'
         canvas.style.width = `${256}px`
         canvas.style.height = `${256}px`
@@ -53,7 +53,7 @@ export default function BallTrailCanvas() {
             texture.dispose()
             canvas.remove()
         }
-    }, [setTrailTexture, trailParameters.canvasSize])
+    }, [setTrailTexture, trailParameters.chunkSize])
 
     // Update canvas visibility
     useEffect(() => {
@@ -83,7 +83,7 @@ export default function BallTrailCanvas() {
 
         const movementDelta = movementDeltaRef.current.subVectors(currentPosition, previousPosition)
 
-        const patchSize = trailParameters.patchSize
+        const patchSize = useStore.getState().terrainParameters.chunkSize
         const scale = canvas.width / patchSize
 
         const canvasDeltaX = -movementDelta.x * scale

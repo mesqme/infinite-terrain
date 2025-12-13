@@ -73,7 +73,10 @@ const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture, scale, amplitude }
                 uniforms: {
                     uTime: { value: 0 },
                     uResolution: { value: new THREE.Vector2(1, 1) },
-                    uGrassParameters: { value: new THREE.Vector4(grassParameters.segmentsCount, size / 2, grassParameters.width, grassParameters.height) },
+                    uGrassSegments: { value: grassParameters.segmentsCount },
+                    uGrassChunkSize: { value: size },
+                    uGrassWidth: { value: grassParameters.width },
+                    uGrassHeight: { value: grassParameters.height },
                     uGrassBaseColor: { value: new THREE.Color(grassParameters.colorBase) },
                     uGrassTopColor: { value: new THREE.Color(grassParameters.colorTop) },
                     uLeanFactor: { value: grassParameters.leanFactor },
@@ -86,8 +89,7 @@ const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture, scale, amplitude }
                     uTrailTexture: { value: null },
                     uBallPosition: { value: new THREE.Vector3() },
                     uCircleCenter: { value: new THREE.Vector3() },
-                    uTrailPatchSize: { value: trailParameters.patchSize },
-                    uTrailTexelSize: { value: 1.0 / trailParameters.canvasSize },
+                    uTrailCanvasSize: { value: trailParameters.canvasSize },
                     uSobelMode: { value: grassParameters.sobelMode },
 
                     uNoiseTexture: { value: noiseTexture },
@@ -102,7 +104,7 @@ const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture, scale, amplitude }
                 fragmentShader: grassFragmentShader,
                 side: THREE.FrontSide,
             }),
-        [grassParameters, size, chunkX, chunkZ, trailParameters, noiseTexture, borderParameters]
+        [grassParameters, size, chunkX, chunkZ, trailParameters.canvasSize, noiseTexture, borderParameters]
     )
 
     useEffect(() => {

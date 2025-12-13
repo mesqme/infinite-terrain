@@ -9,11 +9,10 @@ import useStore from '../stores/useStore.jsx'
 
 import noiseTextureURL from '/textures/noiseTexture.png'
 
-const CHUNK_SIZE = 10
-
 export default function Terrain() {
     const [activeChunks, setActiveChunks] = useState([])
     const currentChunk = useRef({ x: 0, z: 0 })
+    const chunkSize = useStore((s) => s.terrainParameters.chunkSize)
 
     // Noise generator
     const noise2D = useMemo(() => createNoise2D(), [])
@@ -34,11 +33,17 @@ export default function Terrain() {
     useFrame(() => {
         const ballPosition = useStore.getState().ballPosition
 
-        const chunkX = Math.round(ballPosition.x / CHUNK_SIZE)
-        const chunkZ = Math.round(ballPosition.z / CHUNK_SIZE)
+        const safeChunkSize = Math.max(0.0001, chunkSize)
+        const chunkX = Math.round(ballPosition.x / safeChunkSize)
+        const chunkZ = Math.round(ballPosition.z / safeChunkSize)
 
-        if (chunkX !== currentChunk.current.x || chunkZ !== currentChunk.current.z || activeChunks.length === 0) {
-            currentChunk.current = { x: chunkX, z: chunkZ }
+        if (
+            chunkX !== currentChunk.current.x ||
+            chunkZ !== currentChunk.current.z ||
+            currentChunk.current.size !== safeChunkSize ||
+            activeChunks.length === 0
+        ) {
+            currentChunk.current = { x: chunkX, z: chunkZ, size: safeChunkSize }
 
             const newChunks = []
             for (let x = -1; x <= 1; x++) {
@@ -57,7 +62,7 @@ export default function Terrain() {
     return (
         <group>
             {activeChunks.map((chunk) => (
-                <TerrainChunk key={chunk.key} x={chunk.x} z={chunk.z} size={CHUNK_SIZE} noise2D={noise2D} noiseTexture={noiseTexture} />
+                <TerrainChunk key={chunk.key} x={chunk.x} z={chunk.z} size={chunkSize} noise2D={noise2D} noiseTexture={noiseTexture} />
             ))}
         </group>
     )

@@ -65,6 +65,19 @@ export default function Controls() {
                     },
                 }),
         },
+        chunkSize: {
+            value: useStore.getState().terrainParameters.chunkSize,
+            min: 2,
+            max: 50,
+            step: 1,
+            onChange: (value) =>
+                useStore.setState({
+                    terrainParameters: {
+                        ...useStore.getState().terrainParameters,
+                        chunkSize: value,
+                    },
+                }),
+        },
     })
 
     /**
@@ -296,27 +309,14 @@ export default function Controls() {
      * Trail parameters
      */
     useControls('Trail', {
-        canvasSize: {
+        chunkSize: {
             options: [16, 32, 64, 128, 256],
-            value: useStore.getState().trailParameters.canvasSize,
+            value: useStore.getState().trailParameters.chunkSize,
             onChange: (value) =>
                 useStore.setState({
                     trailParameters: {
                         ...useStore.getState().trailParameters,
-                        canvasSize: value,
-                    },
-                }),
-        },
-        patchSize: {
-            value: useStore.getState().trailParameters.patchSize,
-            min: 1,
-            max: 100,
-            step: 1,
-            onChange: (value) =>
-                useStore.setState({
-                    trailParameters: {
-                        ...useStore.getState().trailParameters,
-                        patchSize: value,
+                        chunkSize: value,
                     },
                 }),
         },

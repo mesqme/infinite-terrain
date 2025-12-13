@@ -11,7 +11,6 @@ import terrainFragmentShader from '../shaders/terrain/fragment.glsl'
 
 export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
     const terrainParameters = useStore((s) => s.terrainParameters)
-    const trailParameters = useStore((s) => s.trailParameters)
     const borderParameters = useStore((s) => s.borderParameters)
 
     const meshRef = useRef(null)
@@ -52,7 +51,7 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
                     value: new THREE.Color(terrainParameters.fadeColor),
                 },
                 uCircleCenter: { value: new THREE.Vector3() },
-                uTrailPatchSize: { value: trailParameters.patchSize },
+                uTrailPatchSize: { value: size },
                 uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
                 uGrassFadeOffset: { value: borderParameters.grassFadeOffset },
                 uGroundOffset: { value: borderParameters.groundOffset },
@@ -61,7 +60,7 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
             vertexShader: terrainVertexShader,
             fragmentShader: terrainFragmentShader,
         })
-    }, [terrainParameters, trailParameters, borderParameters])
+    }, [terrainParameters, size, borderParameters])
 
     useFrame(() => {
         const circleCenter = useStore.getState().smoothedCircleCenter

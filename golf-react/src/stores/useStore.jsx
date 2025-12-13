@@ -28,6 +28,7 @@ const useStore = create((set) => ({
     terrainParameters: {
         color: '#908343',
         fadeColor: '#9a9065',
+        chunkSize: 10,
         segments: 32,
         scale: 0.05,
         amplitude: 2,
@@ -73,11 +74,10 @@ const useStore = create((set) => ({
      * Trail parameters
      */
     trailParameters: {
-        canvasSize: 256,
-        patchSize: 15,
-        glowSize: 0.12,
+        chunkSize: 256,
+        glowSize: 0.18,
         fadeAlpha: 0.1,
-        glowAlpha: 0.4,
+        glowAlpha: 0.3,
         showCanvas: false,
     },
     setTrailParameters: (parameters) => {
