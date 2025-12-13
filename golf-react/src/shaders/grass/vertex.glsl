@@ -68,25 +68,16 @@ void main() {
   float distToCircle = length(deltaXZCircle);
   
   // Circle radius ~ half of trail patch (i.e. roughly chunk size / 2)
-  float baseBlendRadius = uTrailPatchSize * uCircleRadiusFactor;
-  
-  // Sample noise texture based on world position to create irregular edge
-  vec2 noiseUV = worldXZ * uNoiseScale * 0.01; // scale noise sampling
-  float noiseValue = texture2D(uNoiseTexture, noiseUV).r; // sample Perlin noise (0-1)
-  
-  // Remap noise from 0-1 to -1 to 1, then apply strength
-  float noiseOffset = (noiseValue - 0.5) * 2.0 * uNoiseStrength;
-  
-  // Apply noise offset to the radius to create irregular edge
-  float blendRadius = baseBlendRadius * (1.0 + noiseOffset);
-  float blendInner  = blendRadius * 0.7;   // start fading a bit before the edge
+  // Main radius control: `grassRadius` is the OUTER edge where grass reaches 0.
+  // The fade width is fixed (based on chunk size), independent of the radius value.
+  float grassRadius = uTrailPatchSize * uCircleRadiusFactor;
+  float grassFadeWidth = uTrailPatchSize * 0.025;
 
-  // 0 inside inner, 1 at and beyond blendRadius (now irregular due to noise)
-  float ballEdgeFade = smoothstep(blendInner, blendRadius, distToCircle);
+  float grassFadeInner = max(grassRadius - grassFadeWidth, 0.0);
 
-  // At the "white surround" edge grass should be very short / almost gone
-  float sphereMinHeightFactor = 0.15;
-  grassHeight *= mix(1.0, sphereMinHeightFactor, ballEdgeFade);
+  // 1 inside grassFadeInner (full grass), 0 at/after grassRadius (no grass)
+  float grassMask = 1.0 - smoothstep(grassFadeInner, grassRadius, distToCircle);
+  grassHeight *= grassMask;
 
   // ---------------------------------------------------------------------------
   // Trail sampling (texture) + additional radial fade for trail itself

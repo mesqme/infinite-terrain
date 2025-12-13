@@ -53,17 +53,12 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
                 },
                 uCircleCenter: { value: new THREE.Vector3() },
                 uTrailPatchSize: { value: trailParameters.patchSize },
-                uNoiseTexture: { value: noiseTexture },
-                uNoiseStrength: { value: borderParameters.noiseStrength },
-                uNoiseScale: { value: borderParameters.noiseScale },
-                uCircleRadiusFactor: {
-                    value: borderParameters.circleRadiusFactor,
-                },
+                uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
             },
             vertexShader: terrainVertexShader,
             fragmentShader: terrainFragmentShader,
         })
-    }, [terrainParameters, trailParameters, borderParameters, noiseTexture])
+    }, [terrainParameters, trailParameters, borderParameters.circleRadiusFactor])
 
     useFrame(() => {
         const circleCenter = useStore.getState().smoothedCircleCenter
@@ -83,7 +78,15 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
                 <mesh ref={meshRef} geometry={geometry} material={material} rotation-x={-Math.PI / 2} />
             </RigidBody>
 
-            <Grass size={size} chunkX={x * size} chunkZ={z * size} noise2D={noise2D} noiseTexture={noiseTexture} />
+            <Grass
+                size={size}
+                chunkX={x * size}
+                chunkZ={z * size}
+                noise2D={noise2D}
+                noiseTexture={noiseTexture}
+                scale={terrainParameters.scale}
+                amplitude={terrainParameters.amplitude}
+            />
         </group>
     )
 }

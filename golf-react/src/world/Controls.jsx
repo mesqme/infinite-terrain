@@ -100,7 +100,7 @@ export default function Controls() {
         radius: {
             value: useStore.getState().borderParameters.circleRadiusFactor,
             min: 0.1,
-            max: 1,
+            max: 0.5,
             step: 0.01,
             onChange: (value) =>
                 useStore.setState({

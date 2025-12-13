@@ -7,10 +7,7 @@ import useStore from '../stores/useStore.jsx'
 import grassFragmentShader from '../shaders/grass/fragment.glsl'
 import grassVertexShader from '../shaders/grass/vertex.glsl'
 
-const GRASS_SCALE = 0.05
-const GRASS_AMPLITUDE = 2
-
-const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture }) => {
+const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture, scale, amplitude }) => {
     const grassRef = useRef(null)
 
     const trailParameters = useStore((s) => s.trailParameters)
@@ -57,7 +54,7 @@ const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture }) => {
             const worldX = x + chunkX
             const worldZ = z + chunkZ
 
-            const y = noise2D ? noise2D(worldX * GRASS_SCALE, worldZ * GRASS_SCALE) * GRASS_AMPLITUDE : 0
+            const y = noise2D ? noise2D(worldX * scale, worldZ * scale) * amplitude : 0
 
             positions[i * 3] = x
             positions[i * 3 + 1] = y
@@ -67,7 +64,7 @@ const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture }) => {
         grassGeometry.setAttribute('aInstancePosition', new THREE.InstancedBufferAttribute(positions, 3))
 
         return grassGeometry
-    }, [grassParameters.segmentsCount, grassParameters.count, size, chunkX, chunkZ, noise2D])
+    }, [grassParameters.segmentsCount, grassParameters.count, size, chunkX, chunkZ, noise2D, scale, amplitude])
 
     // Material
     const grassMaterial = useMemo(
