@@ -110,6 +110,45 @@ export default function Controls() {
                     },
                 }),
         },
+        grassFade: {
+            value: useStore.getState().borderParameters.grassFadeOffset,
+            min: 0,
+            max: 0.1,
+            step: 0.001,
+            onChange: (value) =>
+                useStore.setState({
+                    borderParameters: {
+                        ...useStore.getState().borderParameters,
+                        grassFadeOffset: value,
+                    },
+                }),
+        },
+        groundOffset: {
+            value: useStore.getState().borderParameters.groundOffset,
+            min: 0,
+            max: 0.05,
+            step: 0.001,
+            onChange: (value) =>
+                useStore.setState({
+                    borderParameters: {
+                        ...useStore.getState().borderParameters,
+                        groundOffset: value,
+                    },
+                }),
+        },
+        groundFade: {
+            value: useStore.getState().borderParameters.groundFadeOffset,
+            min: 0,
+            max: 0.1,
+            step: 0.001,
+            onChange: (value) =>
+                useStore.setState({
+                    borderParameters: {
+                        ...useStore.getState().borderParameters,
+                        groundFadeOffset: value,
+                    },
+                }),
+        },
     })
 
     /**

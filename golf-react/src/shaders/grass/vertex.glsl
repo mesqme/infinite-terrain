@@ -24,6 +24,9 @@ uniform sampler2D uNoiseTexture;
 uniform float uNoiseStrength;    // how much noise affects the edge (0-1)
 uniform float uNoiseScale;       // scale of noise sampling
 uniform float uCircleRadiusFactor; // multiplier for uTrailPatchSize to get circle radius
+uniform float uGrassFadeOffset;
+uniform float uGroundOffset;
+uniform float uGroundFadeOffset;
 
 attribute vec3 aInstancePosition; // per-blade base position in chunk space
 
@@ -67,16 +70,23 @@ void main() {
   vec2 deltaXZCircle = worldXZ - circleXZ;
   float distToCircle = length(deltaXZCircle);
   
-  // Circle radius ~ half of trail patch (i.e. roughly chunk size / 2)
-  // Main radius control: `grassRadius` is the OUTER edge where grass reaches 0.
-  // The fade width is fixed (based on chunk size), independent of the radius value.
-  float grassRadius = uTrailPatchSize * uCircleRadiusFactor;
-  float grassFadeWidth = uTrailPatchSize * 0.025;
+  // Circle radius chain: full grass → grass fade → ground offset → ground fade → outer
+  float outerRadius = uTrailPatchSize * uCircleRadiusFactor;
+  float grassFadeWidth = uTrailPatchSize * uGrassFadeOffset;
+  float groundOffsetWidth = uTrailPatchSize * uGroundOffset;
+  float groundFadeWidth = uTrailPatchSize * uGroundFadeOffset;
 
+  // `grassRadius` is where grass reaches 0.0; it must sit inside the outer radius,
+  // after reserving the ground offset + ground fade.
+  float grassRadius = max(outerRadius - (groundOffsetWidth + groundFadeWidth), 0.0);
   float grassFadeInner = max(grassRadius - grassFadeWidth, 0.0);
 
-  // 1 inside grassFadeInner (full grass), 0 at/after grassRadius (no grass)
-  float grassMask = 1.0 - smoothstep(grassFadeInner, grassRadius, distToCircle);
+  float grassMask;
+  if (grassRadius <= grassFadeInner) {
+    grassMask = 1.0 - step(grassRadius, distToCircle);
+  } else {
+    grassMask = 1.0 - smoothstep(grassFadeInner, grassRadius, distToCircle);
+  }
   grassHeight *= grassMask;
 
   // ---------------------------------------------------------------------------
@@ -84,7 +94,7 @@ void main() {
   // Uses actual ball position for trail texture sampling
   // ---------------------------------------------------------------------------
   float distToBall = length(deltaXZ);  // distance to actual ball for trail texture
-  float radius = uTrailPatchSize * 0.5;
+  float radius = max(outerRadius, 0.0001);
   float radiusFade = 1.0 - smoothstep(radius * 0.8, radius, distToBall);
 
   // map world XZ → trail texture UV (ball centered)

@@ -54,11 +54,14 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
                 uCircleCenter: { value: new THREE.Vector3() },
                 uTrailPatchSize: { value: trailParameters.patchSize },
                 uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
+                uGrassFadeOffset: { value: borderParameters.grassFadeOffset },
+                uGroundOffset: { value: borderParameters.groundOffset },
+                uGroundFadeOffset: { value: borderParameters.groundFadeOffset },
             },
             vertexShader: terrainVertexShader,
             fragmentShader: terrainFragmentShader,
         })
-    }, [terrainParameters, trailParameters, borderParameters.circleRadiusFactor])
+    }, [terrainParameters, trailParameters, borderParameters])
 
     useFrame(() => {
         const circleCenter = useStore.getState().smoothedCircleCenter
