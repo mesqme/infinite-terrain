@@ -37,16 +37,6 @@ vec3 hemiLight(vec3 normal, vec3 groundColour, vec3 skyColour) {
   return mix(groundColour, skyColour, 0.5 * normal.y + 0.5);
 }
 
-vec3 phongSpecular(vec3 normal, vec3 lightDir, vec3 viewDir) {
-  float dotNL = saturateValue(dot(normal, lightDir));
-
-  vec3 r = normalize(reflect(-lightDir, normal));
-  float phongValue = max(0.0, dot(viewDir, r));
-  phongValue = pow(phongValue, 32.0);
-
-  vec3 specular = dotNL * vec3(phongValue);
-  return specular;
-}
 
 void main() {
   float grassX = vGrassData.x;
@@ -72,18 +62,11 @@ void main() {
   vec3 lightColour = vec3(1.0);
   vec3 diffuseLighting = lambertLight(normal, viewDir, lightDir, lightColour);
 
-  // Specular
-  vec3 specular = phongSpecular(normal, lightDir, viewDir);
-
-  // Fake AO
-  float ao = remap(pow(grassY, 2.0), 0.0, 1.0, 0.125, 1.0);
-
   vec3 lighting = diffuseLighting * 0.2 + ambientLighting * 0.8;
 
   vec3 color = vColor.xyz * lighting;
 
   // Smoothly darken grass where the ball has moved
-  // trailMask goes from 0 (no effect) to 1 (full darkening) as vTrailValue increases.
   float trailMask = smoothstep(0.0, 0.9, vTrailValue);
   float darkenFactor = mix(1.0, 0.5, trailMask);
   color *= darkenFactor;

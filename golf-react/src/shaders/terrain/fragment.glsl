@@ -1,13 +1,13 @@
-// shaders/terrain/fragment.glsl
-uniform vec3 uBaseColor;        // terrain color
-uniform vec3 uFadeColor;        // background/edge color
-uniform vec3 uCircleCenter;     // smoothed center for visual circle
-uniform float uTrailPatchSize;  // chunk size (outerMax)
-uniform float uCircleRadiusFactor; // scales uTrailPatchSize to circle radius
+uniform vec3 uBaseColor;        
+uniform vec3 uFadeColor;        
+uniform vec3 uCircleCenter;    
+uniform float uTrailPatchSize;  
+uniform float uCircleRadiusFactor;
 uniform float uGrassFadeOffset;
 uniform float uGroundOffset;
 uniform float uGroundFadeOffset;
 
+// Varyings
 varying vec3 vWorldPosition;
 varying vec2 vUv;
 
@@ -17,28 +17,12 @@ void main() {
 
   float distToCircle = length(worldXZ - circleXZ);
 
-  if (uTrailPatchSize <= 0.0) {
-    gl_FragColor = vec4(uBaseColor, 1.0);
-    return;
-  }
+  float innerGrassRadius = uTrailPatchSize * uCircleRadiusFactor;
+  float outerGrassRadius = innerGrassRadius + uGrassFadeOffset;
+  float groundRadius = outerGrassRadius + uGroundOffset;
+  float groundFadeRadius = groundRadius + uGroundFadeOffset;
 
-  float outerRadius = uTrailPatchSize * uCircleRadiusFactor;
-  float grassFadeWidth = uTrailPatchSize * uGrassFadeOffset;
-  float groundOffsetWidth = uTrailPatchSize * uGroundOffset;
-  float groundFadeWidth = uTrailPatchSize * uGroundFadeOffset;
-
-  // Keep the band ordering stable even if the user dials offsets too large.
-  float groundFadeOuter = max(outerRadius, 0.0);
-  float groundSolidOuter = max(groundFadeOuter - groundFadeWidth, 0.0);
-  float grassRadius = max(groundSolidOuter - groundOffsetWidth, 0.0);
-  float innerGrassRadius = max(grassRadius - grassFadeWidth, 0.0);
-
-  float t;
-  if (groundFadeWidth <= 0.0) {
-    t = step(groundSolidOuter, distToCircle);
-  } else {
-    t = smoothstep(groundSolidOuter, groundFadeOuter, distToCircle);
-  }
+  float t = smoothstep(groundRadius, groundFadeRadius, distToCircle);
 
   vec3 color = mix(uBaseColor, uFadeColor, t);
 

@@ -1,37 +1,37 @@
+uniform float uTime;
+
+// Blade parameters
 uniform float uGrassSegments;
 uniform float uGrassChunkSize;
 uniform float uGrassWidth;
 uniform float uGrassHeight;
+uniform float uLeanFactor;
 uniform vec3 uGrassBaseColor;
 uniform vec3 uGrassTopColor;
-uniform float uTime;
-uniform float uLeanFactor;
 
+// Wind parameters
 uniform float uWindScale;
 uniform float uWindStrength;
 uniform float uWindSpeed;
 
-uniform float uPositionX;
-uniform float uPositionZ;
-
-// trail data
+// Trail parameters
 uniform sampler2D uTrailTexture;
-uniform vec3 uBallPosition;      // actual ball position for trail texture sampling
+uniform vec3 uBallPosition;      
 uniform vec3 uCircleCenter;      // smoothed center for visual circle effect (lerps with camera)
 uniform float uTrailCanvasSize;  // texture resolution (e.g. 256)
 uniform float uSobelMode;        // 0.0 = 4-tap, 1.0 = 8-tap Sobel
 
-// noise texture for irregular edge
+// Border parameters
 uniform sampler2D uNoiseTexture;
-uniform float uNoiseStrength;    // how much noise affects the edge (0-1)
-uniform float uNoiseScale;       // scale of noise sampling
-uniform float uCircleRadiusFactor; // multiplier for chunk size to get outer radius
+uniform float uNoiseStrength;    
+uniform float uNoiseScale;       
+uniform float uCircleRadiusFactor; 
 uniform float uGrassFadeOffset;
-uniform float uGroundOffset;
-uniform float uGroundFadeOffset;
 
+// Attributes
 attribute vec3 aInstancePosition; // per-blade base position in chunk space
 
+// Varyings
 varying vec3 vColor;
 varying vec4 vGrassData;         // x: local x, y: heightPercent, z: side, w: unused
 varying vec3 vNormal;
@@ -46,90 +46,53 @@ void main() {
   float GRASS_PATCH_SIZE = uGrassChunkSize * 0.5;
   float GRASS_WIDTH = uGrassWidth;
   float GRASS_HEIGHT = uGrassHeight;
-
-  // base blade anchor in world space
+  float grassHeight = 1.0;
+  float grassMinHeight = 0.25;
+  
+  // world space position of the blade
   vec3 grassOffset = aInstancePosition;
   vec3 grassBladeWorldPos = (modelMatrix * vec4(grassOffset, 1.0)).xyz;
-  vec3 hashVal = hash(grassBladeWorldPos);
-
-  float grassHeight = 1.0;
-
-  // ---------------------------------------------------------------------------
-  // Trail texture UV mapping (uses actual ball position)
-  // ---------------------------------------------------------------------------
-  vec2 worldXZ = grassBladeWorldPos.xz;
-  vec2 ballXZ  = uBallPosition.xz;  // actual ball position for trail texture
-  float patchSize = uGrassChunkSize; // world dimension that maps to full texture
-
-  vec2 deltaXZ = worldXZ - ballXZ;
+  vec2 worldXZ = grassBladeWorldPos.xz;  
+  vec3 hashVal = hash(grassBladeWorldPos); // hash value for the blade
   
-  // ---------------------------------------------------------------------------
-  // Ball blend sphere – radial height fade at the chunk-sized circle
-  // Uses smoothed circle center for visual effect (lerps with camera)
-  // Applies Perlin noise from texture to create irregular edge
-  // ---------------------------------------------------------------------------
+  // blade distance from center
   vec2 circleXZ = uCircleCenter.xz;
   vec2 deltaXZCircle = worldXZ - circleXZ;
   float distToCircle = length(deltaXZCircle);
   
-  // Circle radius chain: full grass → grass fade → ground offset → ground fade → outer
-  float outerRadius = uGrassChunkSize * uCircleRadiusFactor;
-  float grassFadeWidth = uGrassChunkSize * uGrassFadeOffset;
-  float groundOffsetWidth = uGrassChunkSize * uGroundOffset;
-  float groundFadeWidth = uGrassChunkSize * uGroundFadeOffset;
-
-  // `grassRadius` is where grass reaches 0.0; it must sit inside the outer radius,
-  // after reserving the ground offset + ground fade.
-  float grassRadius = max(outerRadius - (groundOffsetWidth + groundFadeWidth), 0.0);
-  float grassFadeInner = max(grassRadius - grassFadeWidth, 0.0);
-
-  float grassMask;
-  if (grassRadius <= grassFadeInner) {
-    grassMask = 1.0 - step(grassRadius, distToCircle);
-  } else {
-    grassMask = 1.0 - smoothstep(grassFadeInner, grassRadius, distToCircle);
-  }
+  // grass circle border
+  float grassRadius = uGrassChunkSize * uCircleRadiusFactor;
+  float grassMask = 1.0 - smoothstep(grassRadius - uGrassFadeOffset, grassRadius, distToCircle);
   grassHeight *= grassMask;
 
-  // ---------------------------------------------------------------------------
-  // Trail sampling (texture) + additional radial fade for trail itself
-  // Uses actual ball position for trail texture sampling
-  // ---------------------------------------------------------------------------
-  float distToBall = length(deltaXZ);  // distance to actual ball for trail texture
-  float radius = max(outerRadius, 0.0001);
-  float radiusFade = 1.0 - smoothstep(radius * 0.8, radius, distToBall);
+  // blade distance to ball
+  vec2 ballXZ  = uBallPosition.xz;
+  vec2 deltaXZ = worldXZ - ballXZ;
+  float distToBall = length(deltaXZ);
+  float radiusFade = 1.0 - smoothstep(grassRadius * 0.8, grassRadius * 1.2, distToBall);
 
   // map world XZ → trail texture UV (ball centered)
-  vec2 trailUv = 0.5 - deltaXZ / patchSize;
+  vec2 trailUv = 0.5 - deltaXZ / uGrassChunkSize;
   trailUv.x = 1.0 - trailUv.x; // flip X to match canvas orientation
   trailUv = clamp(trailUv, 0.0, 1.0);
 
   // scalar trail intensity at this blade
   float trailValue = texture2D(uTrailTexture, trailUv).r;
 
-  // Extra clamp very close to the ball, modulated by trail texture (goes black when ball is airborne)
-  float nearBallRadius = uGrassChunkSize * 0.1;
-  float nearBallFade = 1.0 - smoothstep(0.0, nearBallRadius, distToBall); // 1 at center → 0 at radius
-  float nearBallMinHeight = 0.4; // minimum proportion when touching the ball
-  // If trailValue is black (ball jumping), the clamp is suppressed; brightest keeps the clamp
+  // extra clamp very close to the ball
+  float nearBallFade = 1.0 - smoothstep(0.0, 1.0, distToBall);
   float nearBallClamp = nearBallFade * trailValue;
-  grassHeight *= mix(1.0, nearBallMinHeight, nearBallClamp);
+  grassHeight *= mix(1.0, grassMinHeight, nearBallClamp);
 
-  // ---------------------------------------------------------------------------
-  // Height flattening from trail texture (bright → flattened)
-  // ---------------------------------------------------------------------------
+  // height flattening from trail texture (bright → flattened)
   float flattenFactor = smoothstep(0.6, 1.0, trailValue) * radiusFade;
-  float minHeightFactor = 0.2; // blades can shrink to 20% of original height
-  grassHeight *= mix(1.0, minHeightFactor, flattenFactor);
+  grassHeight *= mix(1.0, grassMinHeight, flattenFactor);
 
-  // ---------------------------------------------------------------------------
-  // Gradient: local trail direction for bending (4-tap or 8-tap Sobel)
-  // ---------------------------------------------------------------------------
+  // local trail direction for bending based on gradient (4-tap or 8-tap Sobel)
   vec2 bendDirXZ = vec2(0.0);
   float bendAmount = 0.0;
 
-  // only compute gradient when trail is present and within radius
-  if (trailValue > 0.05 && radiusFade > 0.0) {
+  if (trailValue > 0.05 && radiusFade > 0.0) { // only compute gradient when trail is present and within radius
     float texel = 1.0 / max(uTrailCanvasSize, 1.0);
     vec2 grad = vec2(0.0);
 
@@ -175,9 +138,7 @@ void main() {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Blade geometry: figure out which vertex this is, and build the curve
-  // ---------------------------------------------------------------------------
+  // blade geometry
   int vertFB_ID = gl_VertexID % (GRASS_VERTICES * 2);
   int vertID = vertFB_ID % GRASS_VERTICES;
 
@@ -195,9 +156,7 @@ void main() {
   float y = heightPercent * height;
   float z = 0.0;
 
-  // ---------------------------------------------------------------------------
-  // Wind + base bending (bezier curve)
-  // ---------------------------------------------------------------------------
+  // wind + base bending (bezier curve)
   float windStrength = noise(
     vec3(grassBladeWorldPos.xz * uWindScale, 0.0) + uTime * uWindSpeed
   );
@@ -227,14 +186,9 @@ void main() {
 
   vec3 grassLocalPosition = grassMat * vec3(x, y, z) + grassOffset;
 
-  // ---------------------------------------------------------------------------
-  // Trail-driven sideways bend with height-vs-flatten blending
-  // ---------------------------------------------------------------------------
+  // trail-driven sideways bend with height-vs-flatten blending
   if (bendAmount > 0.0) {
-    // base: stronger bend near tips
     float bendProfile = heightPercent;
-
-    // reduce sideways bend where grass is already very flattened by trail
     bendProfile *= (1.0 - flattenFactor);
 
     vec3 bendOffsetWorld = vec3(bendDirXZ.x, 0.0, bendDirXZ.y);
@@ -243,49 +197,32 @@ void main() {
     grassLocalPosition += extraBend;
   }
 
-  // ---------------------------------------------------------------------------
-  // Normal computation and view-dependent thickening
-  // ---------------------------------------------------------------------------
+  // Grass local normal
   vec3 curveGrad = bezierGrad(p1, p2, p3, p4, heightPercent);
-  mat2 curveRot90 =
-    mat2(
+  mat2 curveRot90 = mat2(
        0.0,  1.0,
       -1.0,  0.0
-    ) *
-    -zSide;
-  vec3 grassLocalNormal = grassMat * vec3(0.0, curveRot90 * curveGrad.yz);
+    ) * -zSide;
 
-  float distanceBlend = smoothstep(
-    0.0,
-    10.0,
-    distance(cameraPosition, grassBladeWorldPos)
-  );
-  grassLocalNormal = mix(
-    grassLocalNormal,
-    vec3(0.0, 1.0, 0.0),
-    distanceBlend * 0.5
-  );
+  vec3 grassLocalNormal = grassMat * vec3(0.0, curveRot90 * curveGrad.yz);
+  float distanceBlend = smoothstep(0.0, 10.0, distance(cameraPosition, grassBladeWorldPos));
+  grassLocalNormal = mix(grassLocalNormal, vec3(0.0, 1.0, 0.0), distanceBlend * 0.5);
   grassLocalNormal = normalize(grassLocalNormal);
 
   vec4 mvPosition = modelViewMatrix * vec4(grassLocalPosition, 1.0);
 
+  // View space thickening
   vec3 viewDir = normalize(cameraPosition - grassBladeWorldPos);
   vec3 grassFaceNormal = grassMat * vec3(0.0, 0.0, -zSide);
-
   float viewDotNormal = saturateValue(dot(grassFaceNormal, viewDir));
-  float viewSpaceThickenFactor =
-    easeOut(1.0 - viewDotNormal, 4.0) * smoothstep(0.0, 0.2, viewDotNormal);
-
-  mvPosition.x +=
-    viewSpaceThickenFactor * (xSide - 0.5) * width * 0.5 * -zSide;
+  float viewSpaceThickenFactor = easeOut(1.0 - viewDotNormal, 4.0) * smoothstep(0.0, 0.2, viewDotNormal);
+  mvPosition.x += viewSpaceThickenFactor * (xSide - 0.5) * width * 0.5 * -zSide;
 
   gl_Position = projectionMatrix * mvPosition;
-  // hard-clip very flattened blades if needed
-  gl_Position.w = grassHeight < 0.25 ? 0.0 : gl_Position.w;
+  gl_Position.w = grassHeight < grassMinHeight ? 0.0 : gl_Position.w;
 
-  // ---------------------------------------------------------------------------
-  // Varyings to fragment shader
-  // ---------------------------------------------------------------------------
+
+  // Varyings
   vColor = mix(uGrassBaseColor, uGrassTopColor, heightPercent);
   vNormal = normalize((modelMatrix * vec4(grassLocalNormal, 0.0)).xyz);
   vWorldPosition = (modelMatrix * vec4(grassLocalPosition, 1.0)).xyz;

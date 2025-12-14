@@ -80,8 +80,6 @@ const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture, scale, amplitude }
                     uGrassBaseColor: { value: new THREE.Color(grassParameters.colorBase) },
                     uGrassTopColor: { value: new THREE.Color(grassParameters.colorTop) },
                     uLeanFactor: { value: grassParameters.leanFactor },
-                    uPositionX: { value: chunkX },
-                    uPositionZ: { value: chunkZ },
 
                     uWindScale: { value: grassParameters.windScale },
                     uWindStrength: { value: grassParameters.windStrength },
@@ -104,7 +102,7 @@ const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture, scale, amplitude }
                 fragmentShader: grassFragmentShader,
                 side: THREE.FrontSide,
             }),
-        [grassParameters, size, chunkX, chunkZ, trailParameters.canvasSize, noiseTexture, borderParameters]
+        [grassParameters, size, trailParameters.canvasSize, noiseTexture, borderParameters]
     )
 
     useEffect(() => {

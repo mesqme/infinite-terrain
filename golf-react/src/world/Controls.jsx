@@ -126,8 +126,8 @@ export default function Controls() {
         grassFade: {
             value: useStore.getState().borderParameters.grassFadeOffset,
             min: 0,
-            max: 0.1,
-            step: 0.001,
+            max: 4.0,
+            step: 0.01,
             onChange: (value) =>
                 useStore.setState({
                     borderParameters: {
@@ -138,8 +138,8 @@ export default function Controls() {
         },
         groundOffset: {
             value: useStore.getState().borderParameters.groundOffset,
-            min: 0,
-            max: 0.05,
+            min: -2.0,
+            max: 2.0,
             step: 0.001,
             onChange: (value) =>
                 useStore.setState({
@@ -152,8 +152,8 @@ export default function Controls() {
         groundFade: {
             value: useStore.getState().borderParameters.groundFadeOffset,
             min: 0,
-            max: 0.1,
-            step: 0.001,
+            max: 1.0,
+            step: 0.01,
             onChange: (value) =>
                 useStore.setState({
                     borderParameters: {
