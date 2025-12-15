@@ -60,8 +60,15 @@ void main() {
   vec2 deltaXZCircle = worldXZ - circleXZ;
   float distToCircle = length(deltaXZCircle);
   
-  // grass circle border
-  float grassRadius = uGrassChunkSize * uCircleRadiusFactor;
+  // Sample noise texture at world position
+  vec2 noiseUV = worldXZ * uNoiseScale * 0.1;
+  float noiseValue = texture2D(uNoiseTexture, noiseUV).r;
+  
+  // Remap noise from [0, 1] to [-1, 1] and apply strength
+  float noiseOffset = (noiseValue * 2.0 - 1.0) * uNoiseStrength;
+  
+  // grass circle border with noise applied
+  float grassRadius = uGrassChunkSize * uCircleRadiusFactor * (1.0 + noiseOffset);
   float grassMask = 1.0 - smoothstep(grassRadius - uGrassFadeOffset, grassRadius, distToCircle);
   grassHeight *= grassMask;
 

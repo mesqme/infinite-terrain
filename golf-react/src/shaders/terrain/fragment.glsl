@@ -6,6 +6,9 @@ uniform float uCircleRadiusFactor;
 uniform float uGrassFadeOffset;
 uniform float uGroundOffset;
 uniform float uGroundFadeOffset;
+uniform sampler2D uNoiseTexture;
+uniform float uNoiseStrength;
+uniform float uNoiseScale;
 
 // Varyings
 varying vec3 vWorldPosition;
@@ -17,9 +20,16 @@ void main() {
 
   float distToCircle = length(worldXZ - circleXZ);
 
-  float innerGrassRadius = uTrailPatchSize * uCircleRadiusFactor;
-  float outerGrassRadius = innerGrassRadius + uGrassFadeOffset;
-  float groundRadius = outerGrassRadius + uGroundOffset;
+  // Sample noise texture at world position
+  vec2 noiseUV = worldXZ * uNoiseScale * 0.1;
+  float noiseValue = texture2D(uNoiseTexture, noiseUV).r;
+  
+  // Remap noise from [0, 1] to [-1, 1] and apply strength
+  float noiseOffset = (noiseValue * 2.0 - 1.0) * uNoiseStrength;
+  
+  // Apply noise to the inner grass radius
+  float innerGrassRadius = uTrailPatchSize * uCircleRadiusFactor * (1.0 + noiseOffset);
+  float groundRadius = innerGrassRadius + uGroundOffset;
   float groundFadeRadius = groundRadius + uGroundFadeOffset;
 
   float t = smoothstep(groundRadius, groundFadeRadius, distToCircle);

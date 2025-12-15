@@ -40,11 +40,11 @@ const useStore = create((set) => ({
     /**Border parameters */
     borderParameters: {
         noiseStrength: 0.75,
-        noiseScale: 3.5,
-        circleRadiusFactor: 0.5,
+        noiseScale: 0.35,
+        circleRadiusFactor: 0.55,
         grassFadeOffset: 1.0,
-        groundOffset: -1.2,
-        groundFadeOffset: 0.5,
+        groundOffset: 0.1,
+        groundFadeOffset: 0.9,
     },
     setBorderParameters: (parameters) => {
         set({ borderParameters: parameters })

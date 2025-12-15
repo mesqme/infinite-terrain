@@ -99,9 +99,9 @@ export default function Controls() {
         },
         nScale: {
             value: useStore.getState().borderParameters.noiseScale,
-            min: 0.1,
-            max: 10,
-            step: 0.1,
+            min: 0.01,
+            max: 1.0,
+            step: 0.01,
             onChange: (value) =>
                 useStore.setState({
                     borderParameters: {
@@ -113,7 +113,7 @@ export default function Controls() {
         radius: {
             value: useStore.getState().borderParameters.circleRadiusFactor,
             min: 0.1,
-            max: 0.5,
+            max: 1.0,
             step: 0.01,
             onChange: (value) =>
                 useStore.setState({

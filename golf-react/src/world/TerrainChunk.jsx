@@ -1,19 +1,12 @@
-import { useMemo, useEffect, useRef } from 'react'
+import { useMemo, useEffect } from 'react'
 import { RigidBody } from '@react-three/rapier'
-import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-import { Grass } from './Grass.jsx'
+import Grass from './Grass.jsx'
 import useStore from '../stores/useStore.jsx'
 
-import terrainVertexShader from '../shaders/terrain/vertex.glsl'
-import terrainFragmentShader from '../shaders/terrain/fragment.glsl'
-
-export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
+export default function TerrainChunk({ x, z, size, noise2D, noiseTexture, terrainMaterial, grassMaterial }) {
     const terrainParameters = useStore((s) => s.terrainParameters)
-    const borderParameters = useStore((s) => s.borderParameters)
-
-    const meshRef = useRef(null)
 
     // Geometry
     const geometry = useMemo(() => {
@@ -42,42 +35,16 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
         return geo
     }, [noise2D, size, x, z, terrainParameters])
 
-    // Material
-    const material = useMemo(() => {
-        return new THREE.ShaderMaterial({
-            uniforms: {
-                uBaseColor: { value: new THREE.Color(terrainParameters.color) },
-                uFadeColor: {
-                    value: new THREE.Color(terrainParameters.fadeColor),
-                },
-                uCircleCenter: { value: new THREE.Vector3() },
-                uTrailPatchSize: { value: size },
-                uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
-                uGrassFadeOffset: { value: borderParameters.grassFadeOffset },
-                uGroundOffset: { value: borderParameters.groundOffset },
-                uGroundFadeOffset: { value: borderParameters.groundFadeOffset },
-            },
-            vertexShader: terrainVertexShader,
-            fragmentShader: terrainFragmentShader,
-        })
-    }, [terrainParameters, size, borderParameters])
-
-    useFrame(() => {
-        const circleCenter = useStore.getState().smoothedCircleCenter
-        meshRef.current?.material.uniforms.uCircleCenter.value.copy(circleCenter)
-    })
-
     useEffect(() => {
         return () => {
             geometry.dispose()
-            material.dispose()
         }
-    }, [])
+    }, [geometry])
 
     return (
         <group position={[x * size, 0, z * size]}>
             <RigidBody type="fixed" colliders="trimesh" userData={{ name: 'terrain' }}>
-                <mesh ref={meshRef} geometry={geometry} material={material} rotation-x={-Math.PI / 2} />
+                <mesh geometry={geometry} material={terrainMaterial} rotation-x={-Math.PI / 2} />
             </RigidBody>
 
             <Grass
@@ -88,6 +55,7 @@ export default function TerrainChunk({ x, z, size, noise2D, noiseTexture }) {
                 noiseTexture={noiseTexture}
                 scale={terrainParameters.scale}
                 amplitude={terrainParameters.amplitude}
+                grassMaterial={grassMaterial}
             />
         </group>
     )

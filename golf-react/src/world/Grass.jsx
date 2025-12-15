@@ -1,17 +1,9 @@
-import { useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 
 import useStore from '../stores/useStore.jsx'
 
-import grassFragmentShader from '../shaders/grass/fragment.glsl'
-import grassVertexShader from '../shaders/grass/vertex.glsl'
-
-const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture, scale, amplitude }) => {
-    const grassRef = useRef(null)
-
-    const trailParameters = useStore((s) => s.trailParameters)
-    const borderParameters = useStore((s) => s.borderParameters)
+export default function Grass({ size, chunkX, chunkZ, noise2D, scale, amplitude, grassMaterial }) {
     const grassParameters = useStore((s) => s.grassParameters)
 
     // Geometry
@@ -66,62 +58,11 @@ const Grass = ({ size, chunkX, chunkZ, noise2D, noiseTexture, scale, amplitude }
         return grassGeometry
     }, [grassParameters.segmentsCount, grassParameters.count, size, chunkX, chunkZ, noise2D, scale, amplitude])
 
-    // Material
-    const grassMaterial = useMemo(
-        () =>
-            new THREE.ShaderMaterial({
-                uniforms: {
-                    uTime: { value: 0 },
-                    uResolution: { value: new THREE.Vector2(1, 1) },
-                    uGrassSegments: { value: grassParameters.segmentsCount },
-                    uGrassChunkSize: { value: size },
-                    uGrassWidth: { value: grassParameters.width },
-                    uGrassHeight: { value: grassParameters.height },
-                    uGrassBaseColor: { value: new THREE.Color(grassParameters.colorBase) },
-                    uGrassTopColor: { value: new THREE.Color(grassParameters.colorTop) },
-                    uLeanFactor: { value: grassParameters.leanFactor },
-
-                    uWindScale: { value: grassParameters.windScale },
-                    uWindStrength: { value: grassParameters.windStrength },
-                    uWindSpeed: { value: grassParameters.windSpeed },
-                    uTrailTexture: { value: null },
-                    uBallPosition: { value: new THREE.Vector3() },
-                    uCircleCenter: { value: new THREE.Vector3() },
-                    uTrailCanvasSize: { value: trailParameters.canvasSize },
-                    uSobelMode: { value: grassParameters.sobelMode },
-
-                    uNoiseTexture: { value: noiseTexture },
-                    uNoiseStrength: { value: borderParameters.noiseStrength },
-                    uNoiseScale: { value: borderParameters.noiseScale },
-                    uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
-                    uGrassFadeOffset: { value: borderParameters.grassFadeOffset },
-                    uGroundOffset: { value: borderParameters.groundOffset },
-                    uGroundFadeOffset: { value: borderParameters.groundFadeOffset },
-                },
-                vertexShader: grassVertexShader,
-                fragmentShader: grassFragmentShader,
-                side: THREE.FrontSide,
-            }),
-        [grassParameters, size, trailParameters.canvasSize, noiseTexture, borderParameters]
-    )
-
     useEffect(() => {
         return () => {
             grassGeometry.dispose()
-            grassMaterial.dispose()
         }
-    }, [])
+    }, [grassGeometry])
 
-    useFrame(({ clock }) => {
-        grassMaterial.uniforms.uTime.value = clock.elapsedTime
-
-        const state = useStore.getState()
-        grassMaterial.uniforms.uTrailTexture.value = state.trailTexture
-        grassMaterial.uniforms.uBallPosition.value.copy(state.ballPosition)
-        grassMaterial.uniforms.uCircleCenter.value.copy(state.smoothedCircleCenter)
-    })
-
-    return <mesh ref={grassRef} geometry={grassGeometry} material={grassMaterial} />
+    return <mesh geometry={grassGeometry} material={grassMaterial} />
 }
-
-export { Grass }
