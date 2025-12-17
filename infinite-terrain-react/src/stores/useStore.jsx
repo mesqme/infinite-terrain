@@ -97,7 +97,7 @@ const useStore = create((set) => ({
     /**
      * Performance & Debug parameters
      */
-    perfVisible: true,
+    perfVisible: false,
     setPerfVisible: (visible) => {
         set({ perfVisible: visible })
     },

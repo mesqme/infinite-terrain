@@ -1,3 +1,3 @@
-# Golf
+# infinite-terrain
 
-Infinite golf field
+infinite-terrain
