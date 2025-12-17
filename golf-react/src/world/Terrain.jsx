@@ -90,7 +90,7 @@ export default function Terrain() {
                     uTrailTexture: { value: null },
                     uBallPosition: { value: new THREE.Vector3() },
                     uCircleCenter: { value: new THREE.Vector3() },
-                    uTrailCanvasSize: { value: trailParameters.canvasSize },
+                    uTrailCanvasSize: { value: trailParameters.chunkSize },
                     uSobelMode: { value: grassParameters.sobelMode },
 
                     uNoiseTexture: { value: noiseTexture },
@@ -105,7 +105,7 @@ export default function Terrain() {
                 fragmentShader: grassFragmentShader,
                 side: THREE.FrontSide,
             }),
-        [grassParameters, chunkSize, trailParameters.canvasSize, noiseTexture, borderParameters]
+        [grassParameters, chunkSize, trailParameters.chunkSize, noiseTexture, borderParameters]
     )
 
     // Cleanup materials on unmount
