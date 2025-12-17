@@ -4,8 +4,8 @@ import { Canvas } from '@react-three/fiber'
 import Experience from './world/Experience.jsx'
 import { KeyboardControls } from '@react-three/drei'
 import { Leva } from 'leva'
-import { ACESFilmicToneMapping, SRGBColorSpace } from 'three'
 import Loader from './loader/Loader.jsx'
+import Links from './ui/Links.jsx'
 
 const root = ReactDOM.createRoot(document.querySelector('#root'))
 
@@ -35,5 +35,6 @@ root.render(
             <Leva collapsed />
         </KeyboardControls>
         <Loader />
+        <Links />
     </>
 )

@@ -1,0 +1,35 @@
+.links {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    z-index: 100;
+}
+
+.link-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.2);
+    transition: background 0.3s, transform 0.3s;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.link-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.link-item svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
