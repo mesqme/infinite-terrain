@@ -22,7 +22,7 @@ root.render(
             ]}
         >
             <Canvas
-                shadows
+                dpr={[1, 2]}
                 camera={{
                     fov: 45,
                     near: 0.1,

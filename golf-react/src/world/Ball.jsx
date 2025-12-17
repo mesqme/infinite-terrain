@@ -153,14 +153,16 @@ export default function Ball() {
     }, [phase])
 
     useFrame((state, delta) => {
+        const safeDelta = Math.min(delta, 0.1)
+
         // Controls
         const { forward, backward, leftward, rightward } = getKeys()
 
         const impulse = { x: 0, y: 0, z: 0 }
         const torque = { x: 0, y: 0, z: 0 }
 
-        const impulseStrength = PHYSICS_PARAMS.impulseStrength * delta
-        const torqueStrength = PHYSICS_PARAMS.torqueStrength * delta
+        const impulseStrength = PHYSICS_PARAMS.impulseStrength * safeDelta
+        const torqueStrength = PHYSICS_PARAMS.torqueStrength * safeDelta
 
         if (forward) {
             impulse.z -= impulseStrength
@@ -209,7 +211,7 @@ export default function Ball() {
         const circleCenter = new THREE.Vector3()
         circleCenter.copy(bodyPosition)
 
-        const lerpFactor = CAMERA_LERP_SPEED * delta
+        const lerpFactor = CAMERA_LERP_SPEED * safeDelta
         smoothedCameraPosition.lerp(cameraPosition, lerpFactor)
         smoothedCameraTarget.lerp(cameraTarget, lerpFactor)
         smoothedCircleCenter.lerp(circleCenter, lerpFactor)

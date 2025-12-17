@@ -176,9 +176,9 @@ export default function Controls() {
             onChange: setParam('grassParameters', 'leanFactor'),
         },
         sobelMode: {
-            options: ['3x3', '2x2'],
-            value: grassParameters.sobelMode === 1.0 ? '3x3' : '2x2',
-            onChange: (value) => setParam('grassParameters', 'sobelMode')(value === '3x3' ? 1.0 : 0.0),
+            options: ['8 tap Sobel', '4 tap central difference', '2 tap approximation'],
+            value: grassParameters.sobelMode === 2.0 ? '8 tap Sobel' : grassParameters.sobelMode === 1.0 ? '4 tap central difference' : '2 tap approximation',
+            onChange: (value) => setParam('grassParameters', 'sobelMode')(value === '8 tap Sobel' ? 2.0 : value === '4 tap central difference' ? 1.0 : 0.0),
         },
         wScale: {
             value: grassParameters.windScale,

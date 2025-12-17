@@ -61,7 +61,7 @@ const useStore = create((set) => ({
         width: 0.15,
         height: 1.15,
         leanFactor: 0.2,
-        sobelMode: 1.0,
+        sobelMode: 2.0,
         windScale: 0.35,
         windStrength: 0.7,
         windSpeed: 1.0,

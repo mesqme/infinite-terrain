@@ -104,15 +104,22 @@ void main() {
     vec2 grad = vec2(0.0);
 
     if (uSobelMode < 0.5) {
-      // 4-tap central difference: left/right, up/down
+      // Mode 0: 2-tap approximation (Fastest)
+      // Check right and bottom neighbors vs center (trailValue)
+      float Tx1 = texture2D(uTrailTexture, trailUv + vec2( texel, 0.0)).r;
+      float Tz1 = texture2D(uTrailTexture, trailUv + vec2(0.0,  texel)).r;
+      grad = vec2(Tx1 - trailValue, Tz1 - trailValue);
+      
+    } else if (uSobelMode < 1.5) {
+      // Mode 1: 4-tap central difference (Balanced)
       float Tx1 = texture2D(uTrailTexture, trailUv + vec2( texel, 0.0)).r;
       float Tx0 = texture2D(uTrailTexture, trailUv + vec2(-texel, 0.0)).r;
       float Tz1 = texture2D(uTrailTexture, trailUv + vec2(0.0,  texel)).r;
       float Tz0 = texture2D(uTrailTexture, trailUv + vec2(0.0, -texel)).r;
-
       grad = vec2(Tx1 - Tx0, Tz1 - Tz0);
+      
     } else {
-      // 8-tap Sobel-like: 3x3 kernel
+      // Mode 2: 8-tap Sobel 3x3 (High Quality)
       vec2 t = vec2(texel, texel);
 
       float T00 = texture2D(uTrailTexture, trailUv + vec2(-t.x, -t.y)).r;
@@ -164,15 +171,17 @@ void main() {
   float z = 0.0;
 
   // wind + base bending (bezier curve)
-  float windStrength = noise(
-    vec3(grassBladeWorldPos.xz * uWindScale, 0.0) + uTime * uWindSpeed
-  );
+  // Use texture noise for wind
+  vec2 windUV = (grassBladeWorldPos.xz * uWindScale * 0.1) + vec2(uTime * uWindSpeed * 0.1);
+  float windStrength = texture2D(uNoiseTexture, windUV).r * 2.0 - 1.0;
+  
   float windAngle = 0.6;
   vec3 windAxis = vec3(cos(windAngle), 0.0, sin(windAngle));
   float windLeanAngle = windStrength * uWindStrength * heightPercent;
-  float randomLeanAnimation =
-    noise(vec3(grassBladeWorldPos.xz, uTime * uWindSpeed * 1.3)) *
-    (windStrength * 0.5 + 0.125);
+  
+  // Secondary high-frequency noise for random animation
+  vec2 windUV2 = (grassBladeWorldPos.xz * 0.5) + vec2(uTime * uWindSpeed * 0.02);
+  float randomLeanAnimation = (texture2D(uNoiseTexture, windUV2).r * 2.0 - 1.0) * (windStrength * 0.5 + 0.125);
 
   float leanFactor =
     remap(hashVal.y, -1.0, 1.0, -uLeanFactor, uLeanFactor) + randomLeanAnimation;

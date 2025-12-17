@@ -15,26 +15,6 @@ float easeOut(float x, float t) {
   return 1.0 - pow(1.0 - x, t);
 }
 
-// hash21 and murmurHash21 are for hashing the instance ID to a vec2 for position offset
-uvec2 murmurHash21(uint src) {
-  const uint M = 0x5bd1e995u;
-  uvec2 h = uvec2(1190494759u, 2147483647u);
-  src *= M;
-  src ^= src >> 24u;
-  src *= M;
-  h *= M;
-  h ^= src;
-  h ^= h >> 13u;
-  h *= M;
-  h ^= h >> 15u;
-  return h;
-}
-// 1 input -> 2 output
-vec2 hash21(float src) {
-  uvec2 h = murmurHash21(floatBitsToUint(src));
-  return uintBitsToFloat((h & 0x007fffffu) | 0x3f800000u) - 1.0;
-}
-
 // The MIT License
 // Copyright © 2013 Inigo Quilez
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -91,44 +71,6 @@ mat3 rotateAxis(vec3 axis, float angle) {
     oc * axis.z * axis.x - axis.y * s,
     oc * axis.y * axis.z + axis.x * s,
     oc * axis.z * axis.z + c
-  );
-}
-
-// Noise function for wind
-float noise(vec3 p) {
-  vec3 i = floor(p);
-  vec3 f = fract(p);
-
-  vec3 u = f * f * (3.0 - 2.0 * f);
-
-  return mix(
-    mix(
-      mix(
-        dot(hash(i + vec3(0.0, 0.0, 0.0)), f - vec3(0.0, 0.0, 0.0)),
-        dot(hash(i + vec3(1.0, 0.0, 0.0)), f - vec3(1.0, 0.0, 0.0)),
-        u.x
-      ),
-      mix(
-        dot(hash(i + vec3(0.0, 1.0, 0.0)), f - vec3(0.0, 1.0, 0.0)),
-        dot(hash(i + vec3(1.0, 1.0, 0.0)), f - vec3(1.0, 1.0, 0.0)),
-        u.x
-      ),
-      u.y
-    ),
-    mix(
-      mix(
-        dot(hash(i + vec3(0.0, 0.0, 1.0)), f - vec3(0.0, 0.0, 1.0)),
-        dot(hash(i + vec3(1.0, 0.0, 1.0)), f - vec3(1.0, 0.0, 1.0)),
-        u.x
-      ),
-      mix(
-        dot(hash(i + vec3(0.0, 1.0, 1.0)), f - vec3(0.0, 1.0, 1.0)),
-        dot(hash(i + vec3(1.0, 1.0, 1.0)), f - vec3(1.0, 1.0, 1.0)),
-        u.x
-      ),
-      u.y
-    ),
-    u.z
   );
 }
 
