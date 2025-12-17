@@ -6,6 +6,7 @@ import useStore from '../stores/useStore.jsx'
 
 export default function BackgroundSphere() {
     const meshRef = useRef()
+    const backgroundWireframe = useStore((state) => state.backgroundWireframe)
 
     useFrame(() => {
         const ballPosition = useStore.getState().ballPosition
@@ -15,8 +16,7 @@ export default function BackgroundSphere() {
     return (
         <mesh ref={meshRef}>
             <sphereGeometry args={[50]} />
-            {/* <meshBasicMaterial color="#9a9065" side={THREE.BackSide} /> */}
-            <meshBasicMaterial color="red" side={THREE.BackSide} wireframe />
+            {backgroundWireframe ? <meshBasicMaterial color="red" side={THREE.BackSide} wireframe /> : <meshBasicMaterial color="#9a9065" side={THREE.BackSide} />}
         </mesh>
     )
 }

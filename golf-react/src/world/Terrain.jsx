@@ -3,9 +3,11 @@ import { useFrame } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import { createNoise2D } from 'simplex-noise'
 import * as THREE from 'three'
+import { gsap } from 'gsap'
 
 import TerrainChunk from './TerrainChunk.jsx'
 import useStore from '../stores/useStore.jsx'
+import usePhases, { PHASES } from '../stores/usePhases.jsx'
 
 import noiseTextureURL from '/textures/noiseTexture.png'
 import terrainVertexShader from '../shaders/terrain/vertex.glsl'
@@ -15,12 +17,18 @@ import grassFragmentShader from '../shaders/grass/fragment.glsl'
 
 export default function Terrain() {
     const [activeChunks, setActiveChunks] = useState([])
+
     const currentChunk = useRef({ x: 0, z: 0 })
+    const radiusAnimationRef = useRef(null)
+    const prevPhaseRef = useRef(PHASES.loading)
+
     const chunkSize = useStore((s) => s.terrainParameters.chunkSize)
     const terrainParameters = useStore((s) => s.terrainParameters)
     const borderParameters = useStore((s) => s.borderParameters)
     const grassParameters = useStore((s) => s.grassParameters)
     const trailParameters = useStore((s) => s.trailParameters)
+    const setBorderParameters = useStore((s) => s.setBorderParameters)
+    const phase = usePhases((s) => s.phase)
 
     // Noise generator
     const noise2D = useMemo(() => createNoise2D(), [])
@@ -107,6 +115,65 @@ export default function Terrain() {
             grassMaterial.dispose()
         }
     }, [terrainMaterial, grassMaterial])
+
+    // Handle radius animation
+    const handleRadiusAnimation = () => {
+        const targetRadius = borderParameters.circleRadiusFactor
+        const startRadius = 0.2
+
+        // Kill previous animation if it exists
+        if (radiusAnimationRef.current) {
+            radiusAnimationRef.current.kill()
+            radiusAnimationRef.current = null
+        }
+
+        // Set initial radius to 0.2
+        terrainMaterial.uniforms.uCircleRadiusFactor.value = startRadius
+        grassMaterial.uniforms.uCircleRadiusFactor.value = startRadius
+
+        // Create animation object for GSAP to animate
+        const radiusObj = { value: startRadius }
+
+        // Animate radius from 0.2 to target value
+        radiusAnimationRef.current = gsap.to(radiusObj, {
+            value: targetRadius,
+            duration: 1.2,
+            ease: 'power2.out',
+            onUpdate: () => {
+                // Update both materials' circle radius factor
+                terrainMaterial.uniforms.uCircleRadiusFactor.value = radiusObj.value
+                grassMaterial.uniforms.uCircleRadiusFactor.value = radiusObj.value
+            },
+            onComplete: () => {
+                // Update store to keep values in sync
+                setBorderParameters({
+                    ...borderParameters,
+                    circleRadiusFactor: targetRadius,
+                })
+                radiusAnimationRef.current = null
+            },
+        })
+    }
+
+    // Listen for game start trigger from Loader
+    useEffect(() => {
+        // Only trigger when it changes from false to true
+        if (phase === PHASES.start && prevPhaseRef.current !== PHASES.start) {
+            handleRadiusAnimation()
+        }
+        // Update the ref to track the current value
+        prevPhaseRef.current = phase
+    }, [phase, borderParameters, terrainMaterial, grassMaterial, setBorderParameters])
+
+    // Cleanup animations on unmount
+    useEffect(() => {
+        return () => {
+            if (radiusAnimationRef.current) {
+                radiusAnimationRef.current.kill()
+                radiusAnimationRef.current = null
+            }
+        }
+    }, [])
 
     useFrame(({ clock }) => {
         const state = useStore.getState()

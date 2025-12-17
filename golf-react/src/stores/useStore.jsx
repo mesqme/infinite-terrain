@@ -29,7 +29,7 @@ const useStore = create((set) => ({
         color: '#908343',
         fadeColor: '#9a9065',
         chunkSize: 10,
-        segments: 32,
+        segments: 16,
         scale: 0.05,
         amplitude: 2,
     },
@@ -92,6 +92,24 @@ const useStore = create((set) => ({
     },
     setBallParameters: (parameters) => {
         set({ ballParameters: parameters })
+    },
+
+    /**
+     * Performance & Debug parameters
+     */
+    perfVisible: true,
+    setPerfVisible: (visible) => {
+        set({ perfVisible: visible })
+    },
+
+    physicsDebug: false,
+    setPhysicsDebug: (visible) => {
+        set({ physicsDebug: visible })
+    },
+
+    backgroundWireframe: false,
+    setBackgroundWireframe: (visible) => {
+        set({ backgroundWireframe: visible })
     },
 }))
 

@@ -46,6 +46,11 @@
 
 .loader-center--hovered {
     background-color: #ffffff;
+    transition: background-color 0s;
+}
+
+.loader-center:not(.loader-center--hovered) {
+    transition: background-color 0.2s ease;
 }
 
 .loader-percent {
@@ -72,4 +77,9 @@
 
 .loader-go-button--hovered {
     color: #9a9065;
+    transition: color 0s;
+}
+
+.loader-go-button:not(.loader-go-button--hovered) {
+    transition: color 0.2s ease;
 }

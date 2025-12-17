@@ -3,8 +3,10 @@ import { useFrame } from '@react-three/fiber'
 import { useKeyboardControls } from '@react-three/drei'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import * as THREE from 'three'
+import { gsap } from 'gsap'
 
 import useStore from '../stores/useStore.jsx'
+import usePhases, { PHASES } from '../stores/usePhases.jsx'
 
 const BALL_RADIUS = 0.4
 const GROUND_GAP = 0.05 // remember to keep it below the time of impact threshold
@@ -14,13 +16,14 @@ const CAMERA_TARGET_OFFSET = new THREE.Vector3(0, 0.25, 0)
 const CAMERA_LERP_SPEED = 5.0
 const BALL_INITIAL_POSITION = new THREE.Vector3(0, 4, 0)
 const BALL_RESET_Y = -4.0
-const PHYSICS_PARANS = { jumpForce: 2.0, impulseStrength: 1.8, torqueStrength: 0.5 }
+const PHYSICS_PARAMS = { jumpForce: 2.0, impulseStrength: 1.8, torqueStrength: 0.5 }
 
 export default function Ball() {
-    const ballParameters = useStore((state) => state.ballParameters)
+    const ballColor = useStore((state) => state.ballParameters.color)
     const setBallPosition = useStore((state) => state.setBallPosition)
     const setLandBallDistance = useStore((state) => state.setLandBallDistance)
     const setSmoothedCircleCenter = useStore((state) => state.setSmoothedCircleCenter)
+    const phase = usePhases((state) => state.phase)
 
     const [smoothedCameraPosition] = useState(() => new THREE.Vector3(0, 14, 12))
     const [smoothedCameraTarget] = useState(() => new THREE.Vector3(0, 0.25, 0))
@@ -31,6 +34,8 @@ export default function Ball() {
 
     const bodyRef = useRef()
     const downRayRef = useRef()
+    const meshRef = useRef()
+    const scaleAnimationRef = useRef(null)
 
     // Geometry
     const geometry = useMemo(() => {
@@ -40,13 +45,21 @@ export default function Ball() {
     // Material
     const material = useMemo(() => {
         return new THREE.MeshStandardMaterial({
-            color: new THREE.Color(ballParameters.color),
+            color: new THREE.Color(ballColor),
             flatShading: true,
         })
-    }, [ballParameters])
+    }, []) // Create once
+
+    // Update material color when it changes
+    useEffect(() => {
+        material.color.set(ballColor)
+    }, [ballColor, material])
 
     const castDownRay = () => {
-        downRayRef.current = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 })
+        // Optimization: Initialize ray only once
+        if (!downRayRef.current) {
+            downRayRef.current = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 })
+        }
 
         const ray = downRayRef.current
         const origin = ray.origin
@@ -70,10 +83,39 @@ export default function Ball() {
         bodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true)
     }
 
+    const handleReset = () => {
+        // Reset ball position
+        resetPosition()
+
+        // Kill previous animation if it exists
+        if (scaleAnimationRef.current) {
+            scaleAnimationRef.current.kill()
+            scaleAnimationRef.current = null
+        }
+
+        // Animate ball scale from 0 with elastic easing
+        if (meshRef.current) {
+            // Set scale to 0 first
+            meshRef.current.scale.set(0, 0, 0)
+
+            // Create and store new animation
+            scaleAnimationRef.current = gsap.to(meshRef.current.scale, {
+                x: 1,
+                y: 1,
+                z: 1,
+                duration: 0.8,
+                ease: 'elastic.out(1, 0.5)',
+                onComplete: () => {
+                    scaleAnimationRef.current = null
+                },
+            })
+        }
+    }
+
     const jump = () => {
         const hit = castDownRay()
         if (hit && hit.timeOfImpact < TIME_OF_IMPACT_THRESHOLD) {
-            bodyRef.current.applyImpulse({ x: 0, y: PHYSICS_PARANS.jumpForce, z: 0 })
+            bodyRef.current.applyImpulse({ x: 0, y: PHYSICS_PARAMS.jumpForce, z: 0 })
         }
     }
 
@@ -85,10 +127,30 @@ export default function Ball() {
             }
         )
 
+        const unsubscribeReset = subscribeKeys(
+            (state) => state.reset,
+            (value) => {
+                if (value) handleReset()
+            }
+        )
+
         return () => {
             unsubscribeJump()
+            unsubscribeReset()
+            // Cleanup: kill any running animations
+            if (scaleAnimationRef.current) {
+                scaleAnimationRef.current.kill()
+                scaleAnimationRef.current = null
+            }
         }
     }, [])
+
+    // Listen for game start trigger from Loader
+    useEffect(() => {
+        if (phase === PHASES.start) {
+            handleReset()
+        }
+    }, [phase])
 
     useFrame((state, delta) => {
         // Controls
@@ -97,8 +159,8 @@ export default function Ball() {
         const impulse = { x: 0, y: 0, z: 0 }
         const torque = { x: 0, y: 0, z: 0 }
 
-        const impulseStrength = PHYSICS_PARANS.impulseStrength * delta
-        const torqueStrength = PHYSICS_PARANS.torqueStrength * delta
+        const impulseStrength = PHYSICS_PARAMS.impulseStrength * delta
+        const torqueStrength = PHYSICS_PARAMS.torqueStrength * delta
 
         if (forward) {
             impulse.z -= impulseStrength
@@ -169,7 +231,7 @@ export default function Ball() {
             position={[0, 2, 0]}
             userData={{ name: 'ball' }}
         >
-            <mesh geometry={geometry} material={material} />
+            <mesh ref={meshRef} geometry={geometry} material={material} />
         </RigidBody>
     )
 }

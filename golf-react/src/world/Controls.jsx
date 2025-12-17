@@ -2,81 +2,81 @@ import { useControls } from 'leva'
 import useStore from '../stores/useStore.jsx'
 
 export default function Controls() {
+    const terrainParameters = useStore((state) => state.terrainParameters)
+    const borderParameters = useStore((state) => state.borderParameters)
+    const grassParameters = useStore((state) => state.grassParameters)
+    const trailParameters = useStore((state) => state.trailParameters)
+    const ballParameters = useStore((state) => state.ballParameters)
+    const perfVisible = useStore((state) => state.perfVisible)
+    const physicsDebug = useStore((state) => state.physicsDebug)
+    const backgroundWireframe = useStore((state) => state.backgroundWireframe)
+
+    const setParam = (section, param) => (value) => {
+        useStore.setState((state) => ({
+            [section]: {
+                ...state[section],
+                [param]: value,
+            },
+        }))
+    }
+
+    /**
+     * General parameters
+     */
+    useControls('General', {
+        perfMonitor: {
+            value: perfVisible,
+            onChange: (value) => useStore.getState().setPerfVisible(value),
+        },
+        physicsDebug: {
+            value: physicsDebug,
+            onChange: (value) => useStore.getState().setPhysicsDebug(value),
+        },
+        bgWireframe: {
+            value: backgroundWireframe,
+            onChange: (value) => useStore.getState().setBackgroundWireframe(value),
+        },
+    })
+
     /**
      * Terrain Chunk parameters
      */
     useControls('Terrain', {
         color: {
-            value: useStore.getState().terrainParameters.color,
-            onChange: (value) =>
-                useStore.setState({
-                    terrainParameters: {
-                        ...useStore.getState().terrainParameters,
-                        color: value,
-                    },
-                }),
+            value: terrainParameters.color,
+            onChange: setParam('terrainParameters', 'color'),
         },
         fadeColor: {
-            value: useStore.getState().terrainParameters.fadeColor,
-            onChange: (value) =>
-                useStore.setState({
-                    terrainParameters: {
-                        ...useStore.getState().terrainParameters,
-                        fadeColor: value,
-                    },
-                }),
+            value: terrainParameters.fadeColor,
+            onChange: setParam('terrainParameters', 'fadeColor'),
         },
         segments: {
-            value: useStore.getState().terrainParameters.segments,
+            value: terrainParameters.segments,
             min: 1,
             max: 100,
             step: 1,
-            onChange: (value) =>
-                useStore.setState({
-                    terrainParameters: {
-                        ...useStore.getState().terrainParameters,
-                        segments: value,
-                    },
-                }),
+            onChange: setParam('terrainParameters', 'segments'),
         },
         scale: {
-            value: useStore.getState().terrainParameters.scale,
+            value: terrainParameters.scale,
             min: 0,
             max: 1,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    terrainParameters: {
-                        ...useStore.getState().terrainParameters,
-                        scale: value,
-                    },
-                }),
+            onChange: setParam('terrainParameters', 'scale'),
         },
         amplitude: {
-            value: useStore.getState().terrainParameters.amplitude,
+            value: terrainParameters.amplitude,
             min: 0,
             max: 10,
             step: 0.1,
-            onChange: (value) =>
-                useStore.setState({
-                    terrainParameters: {
-                        ...useStore.getState().terrainParameters,
-                        amplitude: value,
-                    },
-                }),
+            onChange: setParam('terrainParameters', 'amplitude'),
         },
         chunkSize: {
-            value: useStore.getState().terrainParameters.chunkSize,
+            value: terrainParameters.chunkSize,
             min: 2,
             max: 50,
             step: 1,
-            onChange: (value) =>
-                useStore.setState({
-                    terrainParameters: {
-                        ...useStore.getState().terrainParameters,
-                        chunkSize: value,
-                    },
-                }),
+            onChange: setParam('terrainParameters', 'chunkSize'),
         },
     })
 
@@ -85,82 +85,46 @@ export default function Controls() {
      */
     useControls('Border', {
         nStrength: {
-            value: useStore.getState().borderParameters.noiseStrength,
+            value: borderParameters.noiseStrength,
             min: 0,
             max: 1,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    borderParameters: {
-                        ...useStore.getState().borderParameters,
-                        noiseStrength: value,
-                    },
-                }),
+            onChange: setParam('borderParameters', 'noiseStrength'),
         },
         nScale: {
-            value: useStore.getState().borderParameters.noiseScale,
+            value: borderParameters.noiseScale,
             min: 0.01,
             max: 1.0,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    borderParameters: {
-                        ...useStore.getState().borderParameters,
-                        noiseScale: value,
-                    },
-                }),
+            onChange: setParam('borderParameters', 'noiseScale'),
         },
         radius: {
-            value: useStore.getState().borderParameters.circleRadiusFactor,
+            value: borderParameters.circleRadiusFactor,
             min: 0.1,
             max: 1.0,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    borderParameters: {
-                        ...useStore.getState().borderParameters,
-                        circleRadiusFactor: value,
-                    },
-                }),
+            onChange: setParam('borderParameters', 'circleRadiusFactor'),
         },
         grassFade: {
-            value: useStore.getState().borderParameters.grassFadeOffset,
+            value: borderParameters.grassFadeOffset,
             min: 0,
             max: 4.0,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    borderParameters: {
-                        ...useStore.getState().borderParameters,
-                        grassFadeOffset: value,
-                    },
-                }),
+            onChange: setParam('borderParameters', 'grassFadeOffset'),
         },
         groundOffset: {
-            value: useStore.getState().borderParameters.groundOffset,
+            value: borderParameters.groundOffset,
             min: -2.0,
             max: 2.0,
             step: 0.001,
-            onChange: (value) =>
-                useStore.setState({
-                    borderParameters: {
-                        ...useStore.getState().borderParameters,
-                        groundOffset: value,
-                    },
-                }),
+            onChange: setParam('borderParameters', 'groundOffset'),
         },
         groundFade: {
-            value: useStore.getState().borderParameters.groundFadeOffset,
+            value: borderParameters.groundFadeOffset,
             min: 0,
             max: 1.0,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    borderParameters: {
-                        ...useStore.getState().borderParameters,
-                        groundFadeOffset: value,
-                    },
-                }),
+            onChange: setParam('borderParameters', 'groundFadeOffset'),
         },
     })
 
@@ -169,139 +133,73 @@ export default function Controls() {
      */
     useControls('Grass', {
         colorBase: {
-            value: useStore.getState().grassParameters.colorBase,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        colorBase: value,
-                    },
-                }),
+            value: grassParameters.colorBase,
+            onChange: setParam('grassParameters', 'colorBase'),
         },
         colorTop: {
-            value: useStore.getState().grassParameters.colorTop,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        colorTop: value,
-                    },
-                }),
+            value: grassParameters.colorTop,
+            onChange: setParam('grassParameters', 'colorTop'),
         },
         count: {
-            value: useStore.getState().grassParameters.count,
+            value: grassParameters.count,
             min: 0,
             max: 5000,
             step: 10,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        count: value,
-                    },
-                }),
+            onChange: setParam('grassParameters', 'count'),
         },
         segments: {
-            value: useStore.getState().grassParameters.segmentsCount,
+            value: grassParameters.segmentsCount,
             min: 1,
             max: 10,
             step: 1,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        segmentsCount: value,
-                    },
-                }),
+            onChange: setParam('grassParameters', 'segmentsCount'),
         },
         width: {
-            value: useStore.getState().grassParameters.width,
+            value: grassParameters.width,
             min: 0,
             max: 0.4,
             step: 0.001,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        width: value,
-                    },
-                }),
+            onChange: setParam('grassParameters', 'width'),
         },
         height: {
-            value: useStore.getState().grassParameters.height,
+            value: grassParameters.height,
             min: 0,
             max: 3,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        height: value,
-                    },
-                }),
+            onChange: setParam('grassParameters', 'height'),
         },
         lean: {
-            value: useStore.getState().grassParameters.leanFactor,
+            value: grassParameters.leanFactor,
             min: 0,
             max: 1,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        leanFactor: value,
-                    },
-                }),
+            onChange: setParam('grassParameters', 'leanFactor'),
         },
         sobelMode: {
             options: ['3x3', '2x2'],
-            value: useStore.getState().grassParameters.sobelMode,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        sobelMode: value === '3x3' ? 1.0 : 0.0,
-                    },
-                }),
+            value: grassParameters.sobelMode === 1.0 ? '3x3' : '2x2',
+            onChange: (value) => setParam('grassParameters', 'sobelMode')(value === '3x3' ? 1.0 : 0.0),
         },
         wScale: {
-            value: useStore.getState().grassParameters.windScale,
+            value: grassParameters.windScale,
             min: 0,
             max: 1,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        windScale: value,
-                    },
-                }),
+            onChange: setParam('grassParameters', 'windScale'),
         },
         wStrength: {
-            value: useStore.getState().grassParameters.windStrength,
+            value: grassParameters.windStrength,
             min: 0,
             max: 1,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        windStrength: value,
-                    },
-                }),
+            onChange: setParam('grassParameters', 'windStrength'),
         },
         wSpeed: {
-            value: useStore.getState().grassParameters.windSpeed,
+            value: grassParameters.windSpeed,
             min: 0,
             max: 2,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    grassParameters: {
-                        ...useStore.getState().grassParameters,
-                        windSpeed: value,
-                    },
-                }),
+            onChange: setParam('grassParameters', 'windSpeed'),
         },
     })
 
@@ -311,63 +209,33 @@ export default function Controls() {
     useControls('Trail', {
         chunkSize: {
             options: [16, 32, 64, 128, 256],
-            value: useStore.getState().trailParameters.chunkSize,
-            onChange: (value) =>
-                useStore.setState({
-                    trailParameters: {
-                        ...useStore.getState().trailParameters,
-                        chunkSize: value,
-                    },
-                }),
+            value: trailParameters.chunkSize,
+            onChange: setParam('trailParameters', 'chunkSize'),
         },
         glowSize: {
-            value: useStore.getState().trailParameters.glowSize,
+            value: trailParameters.glowSize,
             min: 0,
             max: 0.2,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    trailParameters: {
-                        ...useStore.getState().trailParameters,
-                        glowSize: value,
-                    },
-                }),
+            onChange: setParam('trailParameters', 'glowSize'),
         },
         fadeAlpha: {
-            value: useStore.getState().trailParameters.fadeAlpha,
+            value: trailParameters.fadeAlpha,
             min: 0,
             max: 0.5,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    trailParameters: {
-                        ...useStore.getState().trailParameters,
-                        fadeAlpha: value,
-                    },
-                }),
+            onChange: setParam('trailParameters', 'fadeAlpha'),
         },
         glowAlpha: {
-            value: useStore.getState().trailParameters.glowAlpha,
+            value: trailParameters.glowAlpha,
             min: 0,
             max: 1,
             step: 0.01,
-            onChange: (value) =>
-                useStore.setState({
-                    trailParameters: {
-                        ...useStore.getState().trailParameters,
-                        glowAlpha: value,
-                    },
-                }),
+            onChange: setParam('trailParameters', 'glowAlpha'),
         },
         showCanvas: {
-            value: useStore.getState().trailParameters.showCanvas,
-            onChange: (value) =>
-                useStore.setState({
-                    trailParameters: {
-                        ...useStore.getState().trailParameters,
-                        showCanvas: value,
-                    },
-                }),
+            value: trailParameters.showCanvas,
+            onChange: setParam('trailParameters', 'showCanvas'),
         },
     })
 
@@ -376,14 +244,8 @@ export default function Controls() {
      */
     useControls('Ball', {
         color: {
-            value: useStore.getState().ballParameters.color,
-            onChange: (value) =>
-                useStore.setState({
-                    ballParameters: {
-                        ...useStore.getState().ballParameters,
-                        color: value,
-                    },
-                }),
+            value: ballParameters.color,
+            onChange: setParam('ballParameters', 'color'),
         },
     })
 

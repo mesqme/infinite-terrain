@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 
 import usePhases, { PHASES } from '../stores/usePhases'
+import useStore from '../stores/useStore'
 import './loader.css'
 
 const RING_COLOR = '#ffffff'
@@ -14,12 +15,11 @@ export default function Loader() {
     const setPhase = usePhases((s) => s.setPhase)
 
     const [displayed, setDisplayed] = useState(0)
-    const [isHovered, setIsHovered] = useState(false)
+    const [isMouseInside, setIsMouseInside] = useState(false)
 
     const lastPctRef = useRef(0)
     const displayedRef = useRef({ value: 0 })
     const centerRef = useRef(null)
-    const isMouseInsideRef = useRef(false)
 
     // Calculate target progress
     const target = useMemo(() => {
@@ -58,26 +58,15 @@ export default function Loader() {
         }
     }, [phase, active, percent, setPhase])
 
-    // Set hover state when transitioning to warmup if mouse is already inside
-    useEffect(() => {
-        if (phase === PHASES.warmup && isMouseInsideRef.current) {
-            setIsHovered(true)
-        } else if (phase === PHASES.loading) {
-            setIsHovered(false)
-        }
-    }, [phase])
-
     const handleMouseEnter = () => {
-        isMouseInsideRef.current = true
-        if (phase === PHASES.warmup) {
-            setIsHovered(true)
-        }
+        setIsMouseInside(true)
     }
 
     const handleMouseLeave = () => {
-        isMouseInsideRef.current = false
-        setIsHovered(false)
+        setIsMouseInside(false)
     }
+
+    const isHovered = phase === PHASES.warmup && isMouseInside
 
     const handleClick = () => {
         if (phase === PHASES.warmup) {
