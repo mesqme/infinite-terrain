@@ -26,8 +26,8 @@ const useStore = create((set) => ({
      * Terrain parameters
      */
     terrainParameters: {
-        color: '#908343',
-        backgroundColor: '#9a9065',
+        color: '#908343', //#8d7d7d
+        backgroundColor: '#9a9065', //#a38d8d
         chunkSize: 10,
         segments: 16,
         scale: 0.05,
@@ -65,8 +65,8 @@ const useStore = create((set) => ({
      * Grass parameters
      */
     grassParameters: {
-        colorBase: '#669019',
-        colorTop: '#acc125',
+        colorBase: '#669019', //#375da0
+        colorTop: '#acc125', //#6280a0
         count: 2500,
         segmentsCount: 4,
         width: 0.15,
