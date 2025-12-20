@@ -27,6 +27,7 @@ export default function Terrain() {
     const borderParameters = useStore((s) => s.borderParameters)
     const grassParameters = useStore((s) => s.grassParameters)
     const trailParameters = useStore((s) => s.trailParameters)
+    const ditheringParameters = useStore((s) => s.ditheringParameters)
     const setBorderParameters = useStore((s) => s.setBorderParameters)
     const phase = usePhases((s) => s.phase)
 
@@ -51,9 +52,6 @@ export default function Terrain() {
         return new THREE.ShaderMaterial({
             uniforms: {
                 uBaseColor: { value: new THREE.Color(terrainParameters.color) },
-                uFadeColor: {
-                    value: new THREE.Color(terrainParameters.fadeColor),
-                },
                 uCircleCenter: { value: new THREE.Vector3() },
                 uTrailPatchSize: { value: chunkSize },
                 uCircleRadiusFactor: { value: borderParameters.circleRadiusFactor },
@@ -63,17 +61,21 @@ export default function Terrain() {
                 uNoiseTexture: { value: noiseTexture },
                 uNoiseStrength: { value: borderParameters.noiseStrength },
                 uNoiseScale: { value: borderParameters.noiseScale },
+                uPixelSize: { value: ditheringParameters.pixelSize },
+                uDitherMode: { value: ditheringParameters.ditherMode === 'Bayer' ? 1 : 0 }, // 0: Diamond, 1: Bayer
             },
             vertexShader: terrainVertexShader,
             fragmentShader: terrainFragmentShader,
         })
-    }, [terrainParameters, chunkSize, borderParameters, noiseTexture])
+    }, [terrainParameters, chunkSize, borderParameters, noiseTexture, ditheringParameters])
 
     // Grass material - shared across all chunks
     const grassMaterial = useMemo(
         () =>
             new THREE.ShaderMaterial({
                 uniforms: {
+                    uPixelSize: { value: ditheringParameters.pixelSize },
+                    uDitherMode: { value: ditheringParameters.ditherMode === 'Bayer' ? 1 : 0 }, // 0: Diamond, 1: Bayer
                     uTime: { value: 0 },
                     uResolution: { value: new THREE.Vector2(1, 1) },
                     uGrassSegments: { value: grassParameters.segmentsCount },
@@ -105,7 +107,7 @@ export default function Terrain() {
                 fragmentShader: grassFragmentShader,
                 side: THREE.FrontSide,
             }),
-        [grassParameters, chunkSize, trailParameters.chunkSize, noiseTexture, borderParameters]
+        [grassParameters, chunkSize, trailParameters.chunkSize, noiseTexture, borderParameters, ditheringParameters]
     )
 
     // Cleanup materials on unmount
@@ -177,7 +179,6 @@ export default function Terrain() {
 
     useFrame(({ clock }) => {
         const state = useStore.getState()
-
         // Update terrain material uniforms
         terrainMaterial.uniforms.uCircleCenter.value.copy(state.smoothedCircleCenter)
 

@@ -12,10 +12,11 @@ import useStore from '../stores/useStore.jsx'
 export default function Experience() {
     const perfVisible = useStore((state) => state.perfVisible)
     const physicsDebug = useStore((state) => state.physicsDebug)
+    const backgroundColor = useStore((state) => state.terrainParameters.backgroundColor)
 
     return (
         <>
-            <color args={['#9a9065']} attach="background" />
+            <color args={[backgroundColor]} attach="background" />
 
             {perfVisible && <Perf position="top-left" />}
 
@@ -27,7 +28,7 @@ export default function Experience() {
 
             <BallTrailCanvas />
             <Controls />
-            <BackgroundSphere />
+            <BackgroundSphere color={backgroundColor} />
         </>
     )
 }

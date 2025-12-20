@@ -242,6 +242,6 @@ void main() {
   vColor = mix(uGrassBaseColor, uGrassTopColor, heightPercent);
   vNormal = normalize((modelMatrix * vec4(grassLocalNormal, 0.0)).xyz);
   vWorldPosition = (modelMatrix * vec4(grassLocalPosition, 1.0)).xyz;
-  vGrassData = vec4(x, heightPercent, xSide, 0.0);
+  vGrassData = vec4(x, heightPercent, xSide, grassMask);
   vTrailValue = trailValue * radiusFade;
 }

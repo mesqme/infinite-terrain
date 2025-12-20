@@ -4,6 +4,7 @@ import useStore from '../stores/useStore.jsx'
 export default function Controls() {
     const terrainParameters = useStore((state) => state.terrainParameters)
     const borderParameters = useStore((state) => state.borderParameters)
+    const ditheringParameters = useStore((state) => state.ditheringParameters)
     const grassParameters = useStore((state) => state.grassParameters)
     const trailParameters = useStore((state) => state.trailParameters)
     const ballParameters = useStore((state) => state.ballParameters)
@@ -46,9 +47,9 @@ export default function Controls() {
             value: terrainParameters.color,
             onChange: setParam('terrainParameters', 'color'),
         },
-        fadeColor: {
-            value: terrainParameters.fadeColor,
-            onChange: setParam('terrainParameters', 'fadeColor'),
+        backgroundColor: {
+            value: terrainParameters.backgroundColor,
+            onChange: setParam('terrainParameters', 'backgroundColor'),
         },
         segments: {
             value: terrainParameters.segments,
@@ -108,23 +109,41 @@ export default function Controls() {
         grassFade: {
             value: borderParameters.grassFadeOffset,
             min: 0,
-            max: 4.0,
+            max: 8.0,
             step: 0.01,
             onChange: setParam('borderParameters', 'grassFadeOffset'),
         },
         groundOffset: {
             value: borderParameters.groundOffset,
-            min: -2.0,
-            max: 2.0,
+            min: -3.0,
+            max: 3.0,
             step: 0.001,
             onChange: setParam('borderParameters', 'groundOffset'),
         },
         groundFade: {
             value: borderParameters.groundFadeOffset,
             min: 0,
-            max: 1.0,
+            max: 3.0,
             step: 0.01,
             onChange: setParam('borderParameters', 'groundFadeOffset'),
+        },
+    })
+
+    /**
+     * Dithering parameters
+     */
+    useControls('Dithering Params', {
+        ditherMode: {
+            value: ditheringParameters.ditherMode,
+            options: ['Diamond', 'Bayer'],
+            onChange: setParam('ditheringParameters', 'ditherMode'),
+        },
+        pixelSize: {
+            value: ditheringParameters.pixelSize,
+            min: 1,
+            max: 10,
+            step: 1,
+            onChange: setParam('ditheringParameters', 'pixelSize'),
         },
     })
 

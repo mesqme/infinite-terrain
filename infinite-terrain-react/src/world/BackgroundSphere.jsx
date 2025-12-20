@@ -4,7 +4,7 @@ import { useRef } from 'react'
 
 import useStore from '../stores/useStore.jsx'
 
-export default function BackgroundSphere() {
+export default function BackgroundSphere({ color }) {
     const meshRef = useRef()
     const backgroundWireframe = useStore((state) => state.backgroundWireframe)
 
@@ -16,7 +16,7 @@ export default function BackgroundSphere() {
     return (
         <mesh ref={meshRef}>
             <sphereGeometry args={[50]} />
-            {backgroundWireframe ? <meshBasicMaterial color="red" side={THREE.BackSide} wireframe /> : <meshBasicMaterial color="#9a9065" side={THREE.BackSide} />}
+            {backgroundWireframe ? <meshBasicMaterial color="red" side={THREE.BackSide} wireframe /> : <meshBasicMaterial color={color} side={THREE.BackSide} />}
         </mesh>
     )
 }

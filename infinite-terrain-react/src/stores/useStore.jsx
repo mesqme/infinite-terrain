@@ -27,7 +27,7 @@ const useStore = create((set) => ({
      */
     terrainParameters: {
         color: '#908343',
-        fadeColor: '#9a9065',
+        backgroundColor: '#9a9065',
         chunkSize: 10,
         segments: 16,
         scale: 0.05,
@@ -41,13 +41,24 @@ const useStore = create((set) => ({
     borderParameters: {
         noiseStrength: 0.75,
         noiseScale: 0.35,
-        circleRadiusFactor: 0.55,
-        grassFadeOffset: 1.0,
-        groundOffset: 0.1,
-        groundFadeOffset: 0.9,
+        circleRadiusFactor: 0.65,
+        grassFadeOffset: 3.5,
+        groundOffset: -0.75,
+        groundFadeOffset: 1.0,
     },
     setBorderParameters: (parameters) => {
         set({ borderParameters: parameters })
+    },
+
+    /**
+     * Dithering parameters
+     */
+    ditheringParameters: {
+        ditherMode: 'Bayer', // 'Diamond' | 'Bayer'
+        pixelSize: 2,
+    },
+    setDitheringParameters: (parameters) => {
+        set({ ditheringParameters: parameters })
     },
 
     /**
@@ -56,7 +67,7 @@ const useStore = create((set) => ({
     grassParameters: {
         colorBase: '#669019',
         colorTop: '#acc125',
-        count: 1900,
+        count: 2500,
         segmentsCount: 4,
         width: 0.15,
         height: 1.15,
