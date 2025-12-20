@@ -6,6 +6,7 @@ import { KeyboardControls } from '@react-three/drei'
 import { Leva } from 'leva'
 import Loader from './loader/Loader.jsx'
 import Links from './ui/Links.jsx'
+import ControlsIcons from './ui/ControlsIcons.jsx'
 
 const root = ReactDOM.createRoot(document.querySelector('#root'))
 
@@ -36,5 +37,6 @@ root.render(
         </KeyboardControls>
         <Loader />
         <Links />
+        <ControlsIcons />
     </>
 )

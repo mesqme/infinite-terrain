@@ -26,8 +26,8 @@ const useStore = create((set) => ({
      * Terrain parameters
      */
     terrainParameters: {
-        color: '#908343', //#8d7d7d
-        backgroundColor: '#9a9065', //#a38d8d
+        color: '#908343', //#8d7d7d //#0c292e
+        backgroundColor: '#9a9065', //#a38d8d //#0c1521
         chunkSize: 10,
         segments: 16,
         scale: 0.05,
@@ -65,8 +65,8 @@ const useStore = create((set) => ({
      * Grass parameters
      */
     grassParameters: {
-        colorBase: '#669019', //#375da0
-        colorTop: '#acc125', //#6280a0
+        colorBase: '#669019', //#375da0 //#044537
+        colorTop: '#acc125', //#6280a0 //#0d655b
         count: 2500,
         segmentsCount: 4,
         width: 0.15,
@@ -99,7 +99,7 @@ const useStore = create((set) => ({
      * Ball parameters
      */
     ballParameters: {
-        color: '#c7442d',
+        color: '#c7442d', // #3b2ec7
     },
     setBallParameters: (parameters) => {
         set({ ballParameters: parameters })

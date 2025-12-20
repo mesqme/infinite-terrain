@@ -1,0 +1,73 @@
+.controls-icons {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    z-index: 100;
+    pointer-events: none; /* Let clicks pass through to canvas */
+}
+
+.controls-row {
+    display: flex;
+    gap: 10px;
+}
+
+.control-key {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid #ffffff;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    transition: background 0.1s, transform 0.1s;
+    box-sizing: border-box; /* Include border in width/height */
+}
+
+.control-key.active {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(0.95);
+}
+
+.control-key.space {
+    height: 40px;
+    /* 
+       Width calculation with box-sizing: border-box:
+       3 keys (40px each) + 2 gaps (10px each) = 140px
+    */
+    width: 140px;
+}
+
+/* Arrow icons using CSS borders */
+.arrow {
+    width: 10px;
+    height: 10px;
+    border-top: 2px solid #ffffff;
+    border-right: 2px solid #ffffff;
+    display: block;
+    box-sizing: content-box; /* Ensure border doesn't shrink the arrow shape if global box-sizing is set */
+}
+
+.arrow-up {
+    transform: rotate(-45deg);
+    margin-top: 4px;
+}
+
+.arrow-left {
+    transform: rotate(-135deg);
+    margin-left: 4px;
+}
+
+.arrow-down {
+    transform: rotate(135deg);
+    margin-bottom: 4px;
+}
+
+.arrow-right {
+    transform: rotate(45deg);
+    margin-right: 4px;
+}
