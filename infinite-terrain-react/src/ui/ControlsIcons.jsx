@@ -1,97 +1,79 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
+import { useKeyboardControls } from '@react-three/drei'
 import './ControlsIcons.css'
+import useStore from '../stores/useStore.jsx'
 
-export default function ControlsIcons() {
-    const [activeKeys, setActiveKeys] = useState({
-        up: false,
-        down: false,
-        left: false,
-        right: false,
-        space: false,
-    })
+function ControlKey({ controlName, children, className = '' }) {
+    const buttonRef = useRef()
+    const [subscribeKeys, getKeys] = useKeyboardControls()
+    const setControl = useStore((state) => state.setControl)
 
     useEffect(() => {
-        const handleKeyDown = (event) => {
-            switch (event.code) {
-                case 'ArrowUp':
-                case 'KeyW':
-                    setActiveKeys((prev) => ({ ...prev, up: true }))
-                    break
-                case 'ArrowDown':
-                case 'KeyS':
-                    setActiveKeys((prev) => ({ ...prev, down: true }))
-                    break
-                case 'ArrowLeft':
-                case 'KeyA':
-                    setActiveKeys((prev) => ({ ...prev, left: true }))
-                    break
-                case 'ArrowRight':
-                case 'KeyD':
-                    setActiveKeys((prev) => ({ ...prev, right: true }))
-                    break
-                case 'Space':
-                    setActiveKeys((prev) => ({ ...prev, space: true }))
-                    break
-                default:
-                    break
+        const updateState = () => {
+            // Get current values from both sources
+            const isKeyPressed = getKeys()[controlName]
+            const isStorePressed = useStore.getState().controls[controlName]
+            const active = isKeyPressed || isStorePressed
+
+            if (buttonRef.current) {
+                if (active) {
+                    buttonRef.current.classList.add('active')
+                } else {
+                    buttonRef.current.classList.remove('active')
+                }
             }
         }
 
-        const handleKeyUp = (event) => {
-            switch (event.code) {
-                case 'ArrowUp':
-                case 'KeyW':
-                    setActiveKeys((prev) => ({ ...prev, up: false }))
-                    break
-                case 'ArrowDown':
-                case 'KeyS':
-                    setActiveKeys((prev) => ({ ...prev, down: false }))
-                    break
-                case 'ArrowLeft':
-                case 'KeyA':
-                    setActiveKeys((prev) => ({ ...prev, left: false }))
-                    break
-                case 'ArrowRight':
-                case 'KeyD':
-                    setActiveKeys((prev) => ({ ...prev, right: false }))
-                    break
-                case 'Space':
-                    setActiveKeys((prev) => ({ ...prev, space: false }))
-                    break
-                default:
-                    break
-            }
-        }
+        // Subscribe to keyboard changes
+        const unsubKeyboard = subscribeKeys((state) => state[controlName], updateState)
 
-        window.addEventListener('keydown', handleKeyDown)
-        window.addEventListener('keyup', handleKeyUp)
+        // Subscribe to store changes (UI clicks)
+        const unsubStore = useStore.subscribe((state) => state.controls[controlName], updateState)
 
         return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-            window.removeEventListener('keyup', handleKeyUp)
+            unsubKeyboard()
+            unsubStore()
         }
-    }, [])
+    }, [controlName, subscribeKeys, getKeys])
 
+    const handlePointerDown = (event) => {
+        event.preventDefault()
+        setControl(controlName, true)
+    }
+
+    const handlePointerUp = (event) => {
+        event.preventDefault()
+        setControl(controlName, false)
+    }
+
+    return (
+        <div ref={buttonRef} className={`control-key ${className}`} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp}>
+            {children}
+        </div>
+    )
+}
+
+export default function ControlsIcons() {
     return (
         <div className="controls-icons">
             <div className="controls-row">
-                <div className={`control-key ${activeKeys.up ? 'active' : ''}`}>
+                <ControlKey controlName="forward">
                     <span className="arrow arrow-up"></span>
-                </div>
+                </ControlKey>
             </div>
             <div className="controls-row">
-                <div className={`control-key ${activeKeys.left ? 'active' : ''}`}>
+                <ControlKey controlName="leftward">
                     <span className="arrow arrow-left"></span>
-                </div>
-                <div className={`control-key ${activeKeys.down ? 'active' : ''}`}>
+                </ControlKey>
+                <ControlKey controlName="backward">
                     <span className="arrow arrow-down"></span>
-                </div>
-                <div className={`control-key ${activeKeys.right ? 'active' : ''}`}>
+                </ControlKey>
+                <ControlKey controlName="rightward">
                     <span className="arrow arrow-right"></span>
-                </div>
+                </ControlKey>
             </div>
             <div className="controls-row">
-                <div className={`control-key space ${activeKeys.space ? 'active' : ''}`}></div>
+                <ControlKey controlName="jump" className="space" />
             </div>
         </div>
     )

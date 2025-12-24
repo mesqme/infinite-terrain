@@ -34,9 +34,9 @@ root.render(
                 <Experience />
             </Canvas>
             <Leva collapsed />
+            <ControlsIcons />
         </KeyboardControls>
         <Loader />
         <Links />
-        <ControlsIcons />
     </>
 )

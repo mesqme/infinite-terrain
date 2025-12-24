@@ -134,9 +134,18 @@ export default function Ball() {
             }
         )
 
+        // Also subscribe to store jump for UI controls
+        const unsubscribeStore = useStore.subscribe(
+            (state) => state.controls.jump,
+            (value) => {
+                if (value) jump()
+            }
+        )
+
         return () => {
             unsubscribeJump()
             unsubscribeReset()
+            unsubscribeStore()
             // Cleanup: kill any running animations
             if (scaleAnimationRef.current) {
                 scaleAnimationRef.current.kill()
@@ -157,6 +166,7 @@ export default function Ball() {
 
         // Controls
         const { forward, backward, leftward, rightward } = getKeys()
+        const storeControls = useStore.getState().controls
 
         const impulse = { x: 0, y: 0, z: 0 }
         const torque = { x: 0, y: 0, z: 0 }
@@ -164,22 +174,22 @@ export default function Ball() {
         const impulseStrength = PHYSICS_PARAMS.impulseStrength * safeDelta
         const torqueStrength = PHYSICS_PARAMS.torqueStrength * safeDelta
 
-        if (forward) {
+        if (forward || storeControls.forward) {
             impulse.z -= impulseStrength
             torque.x -= torqueStrength
         }
 
-        if (rightward) {
+        if (rightward || storeControls.rightward) {
             impulse.x += impulseStrength
             torque.z -= torqueStrength
         }
 
-        if (backward) {
+        if (backward || storeControls.backward) {
             impulse.z += impulseStrength
             torque.x += torqueStrength
         }
 
-        if (leftward) {
+        if (leftward || storeControls.leftward) {
             impulse.x -= impulseStrength
             torque.z += torqueStrength
         }
