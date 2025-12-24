@@ -28,8 +28,8 @@ const useStore = create(
          * Terrain parameters
          */
         terrainParameters: {
-            color: '#908343', //#8d7d7d //#0c292e
-            backgroundColor: '#9a9065', //#a38d8d //#0c1521
+            color: '#908343', //#8d7d7d //#0c292e //#244462 //#3d3380 //908343
+            backgroundColor: '#9a9065', //#a38d8d //#0c1521 //#171c38 //#1b1738 //9a9065
             chunkSize: 10,
             segments: 16,
             scale: 0.05,
@@ -67,8 +67,8 @@ const useStore = create(
          * Grass parameters
          */
         grassParameters: {
-            colorBase: '#669019', //#375da0 //#044537
-            colorTop: '#acc125', //#6280a0 //#0d655b
+            colorBase: '#669019', //#375da0 //#044537 #6f4108 //669019
+            colorTop: '#acc125', //#6280a0 //#0d655b #c17c05 //acc125
             count: 2500,
             segmentsCount: 4,
             width: 0.15,
@@ -101,7 +101,7 @@ const useStore = create(
          * Ball parameters
          */
         ballParameters: {
-            color: '#c7442d', // #3b2ec7
+            color: '#c7442d', // #3b2ec7 #c7442d
         },
         setBallParameters: (parameters) => {
             set({ ballParameters: parameters })
@@ -123,6 +123,38 @@ const useStore = create(
         backgroundWireframe: false,
         setBackgroundWireframe: (visible) => {
             set({ backgroundWireframe: visible })
+        },
+
+        /**
+         * Theme
+         */
+        theme: 'light',
+        setTheme: (theme) => {
+            const themes = {
+                dark: {
+                    terrain: '#3d3380',
+                    background: '#1b1738',
+                    grassBase: '#6f4108',
+                    grassTop: '#c17c05',
+                    ball: '#3b2ec7',
+                },
+                light: {
+                    terrain: '#908343',
+                    background: '#9a9065',
+                    grassBase: '#669019',
+                    grassTop: '#acc125',
+                    ball: '#c7442d',
+                },
+            }
+
+            const colors = themes[theme]
+
+            set((state) => ({
+                theme,
+                terrainParameters: { ...state.terrainParameters, color: colors.terrain, backgroundColor: colors.background },
+                grassParameters: { ...state.grassParameters, colorBase: colors.grassBase, colorTop: colors.grassTop },
+                ballParameters: { ...state.ballParameters, color: colors.ball },
+            }))
         },
 
         /**

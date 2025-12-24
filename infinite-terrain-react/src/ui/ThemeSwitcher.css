@@ -1,0 +1,42 @@
+.theme-switcher {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    z-index: 100;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.switcher-track {
+    width: 60px;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid #ffffff;
+    border-radius: 15px;
+    position: relative;
+    transition: background 0.3s;
+    box-sizing: border-box;
+}
+
+.switcher-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    border: 2px solid #ffffff;
+    box-sizing: border-box;
+    transition: transform 0.3s, background-color 0.3s;
+}
+
+.switcher-track.light .switcher-thumb {
+    transform: translateX(0);
+    background-color: #ffffff;
+}
+
+.switcher-track.dark .switcher-thumb {
+    transform: translateX(30px);
+    background-color: transparent;
+}
